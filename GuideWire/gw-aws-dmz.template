@@ -1,0 +1,173 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "AWS CloudFormation Template for a Guideware Management Layer",
+	"Parameters": {
+		"pBastionKeyName": {
+			"Description": "Name of an existing EC2 KeyPair to enable SSH access to the Bastion instance",
+			"Type": "String"
+		},
+		
+		"pRDPLocation": {
+			"Description": "Lockdown RDP access to the Bastion host (default can be accessed from anywhere)",
+			"Type": "String"
+		},
+		"pBastionInstanceType": {
+			"Description": "Bastion Server EC2 instance type",
+			"Type": "String"
+		},
+		"pVPCID": {
+			"Type": "String",
+			"Description": "VPC ID "
+		},
+		"pManagementSubnetIDAZ1": {
+			"Type": "String",
+			"Description": "The Bastion PublicSubNet IP"
+		},
+		"pManagementSubnetIDAZ2": {
+			"Type": "String",
+			"Description": "The Bastion PublicSubNet IP"
+		}
+	
+	},
+	
+	"Resources": {
+		"rPublicLoadBalancer": {
+			"Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+			"Properties": {
+				"CrossZone": "true",
+				"SecurityGroups": [{
+					"Ref": "rLoadBalancerSecurityGroup"
+				}],
+				"Subnets": [{
+					"Ref": "pManagementSubnetIDAZ1"
+				},{
+					"Ref": "pManagementSubnetIDAZ2"
+				} ],
+				"LBCookieStickinessPolicy": [{
+					"PolicyName": "CookieBasedPolicy",
+					"CookieExpirationPeriod": "30"
+				}],
+				"Instances": [{
+					"Ref": "rGuidewareBastionServer"
+				}],
+				"Listeners": [{
+						"LoadBalancerPort": "80",
+						"InstancePort": "80",
+						"Protocol": "HTTP",
+						"PolicyNames": [
+							"CookieBasedPolicy"
+						]
+					}
+				],
+				"HealthCheck": {
+					"Target": "HTTP:80/",
+					"HealthyThreshold": "2",
+					"UnhealthyThreshold": "5",
+					"Interval": "10",
+					"Timeout": "5"
+				}
+			}
+		},
+		"rLoadBalancerSecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"GroupDescription": "Public ELB Security Group with HTTP access on port 80 from the internet",
+				"VpcId": {
+					"Ref": "pVPCID"
+				},
+				"SecurityGroupIngress": [{
+					"IpProtocol": "tcp",
+					"FromPort": "0",
+					"ToPort": "65535",
+					"CidrIp": "0.0.0.0/0"
+				}]
+			}
+		},
+    
+		"rGuidewareBastionServer": {
+		  "DependsOn": [
+			"rGuidewareBastionSecurityGroup"
+		  ],
+		  "Type": "AWS::EC2::Instance",
+		  "Properties": {
+			"ImageId": "ami-c6e9d9bd",
+			"InstanceType": "t2.micro",
+			"KeyName": {
+			  "Ref": "pBastionKeyName"
+			},
+			"Tags": [
+			  {
+				"Key": "Name",
+				"Value": "GWBastionServer"
+			  }
+			],
+			"NetworkInterfaces": [
+			  {
+				"AssociatePublicIpAddress": "true",
+				"DeviceIndex": "0",
+				"GroupSet": [
+				  {
+					"Ref": "rGuidewareBastionSecurityGroup"
+				  }
+				],
+				"SubnetId": {
+				  "Ref": "pManagementSubnetIDAZ1"
+				}
+			  }
+			]
+		  }
+		  
+		},
+		"rGuidewareBastionSecurityGroup": {
+		  "Type": "AWS::EC2::SecurityGroup",
+		  "Properties": {
+			"GroupDescription": "Enable RDP access via port 3389",
+			"SecurityGroupIngress": [
+			  {
+				"CidrIp": {
+				  "Ref": "pRDPLocation"
+				},
+				"FromPort": "3389",
+				"IpProtocol": "tcp",
+				"ToPort": "3389"
+			  }
+			],
+			"Tags": [
+			  {
+				"Key": "Name",
+				"Value": "GuidewareBastionSecurityGroup"
+			  }
+			],
+			"VpcId": {
+			  "Ref": "pVPCID"
+			}
+		  }
+		}
+	
+	},
+	"Outputs": {
+		"WebsiteURL": {
+			"Description": "URL for Guidewire LoadBalancer",
+			"Value": {
+				"Fn::Join": [
+					"", [
+						"http://", {
+							"Fn::GetAtt": [
+								"rPublicLoadBalancer",
+								"DNSName"
+							]
+						}
+					]
+				]
+			}
+		},
+
+		"PublicELB":{
+			"Description":"Export ELB to Main stack",
+			"Value":{"Ref":"rPublicLoadBalancer"},
+			"Export": {
+                "Name": "PublicLoadBalancer"
+            }
+		}
+	}
+}

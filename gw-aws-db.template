@@ -1,0 +1,109 @@
+ {
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "AWS CloudFormation Template for DB Server.Amazon RDS currently supports MySQL major versions 5.5, 5.6, and 5.7. The minor versions are 5.7.10, 5.7.11, 5.7.16 for us-east-1",
+	"Parameters": {
+		"pDBName": {
+			"Type": "String"
+		},
+		"pDBUser": {
+			"Type": "String"
+		},
+		"pDBPassword": {
+			"Type": "String"
+		},		
+		"pVPCID": {
+			"Type": "String",
+			"Description": "The VPC that would ideally sould contain all its infrastructure "
+		},		
+		"pPrimaryPrivateSubnet": {
+			"Type": "String"
+		},
+		"pSecondaryPrivateSubnet": {
+			"Type": "String"		
+		}	
+	},
+	"Resources": {
+		"rGWDBSubnetGroup": {
+			"Type": "AWS::RDS::DBSubnetGroup",
+			"Properties": {
+				"DBSubnetGroupDescription": "DBSubnetGroup",
+				"SubnetIds": [{"Ref": "pPrimaryPrivateSubnet"},{"Ref": "pSecondaryPrivateSubnet"}],
+				"Tags": [{
+					"Key": "Name",
+					"Value": "Guidewire-PrivateDBSubnetGroup"
+				}]
+			}
+		},
+		  "rDBEC2SecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties" : {
+			  "GroupDescription": "Open database for access",
+			  "VpcId": {
+					"Ref": "pVPCID"
+				},
+			  "SecurityGroupIngress" : [{
+				"IpProtocol" : "tcp",
+				"FromPort" : "3306",
+				"ToPort" : "3306",
+				"CidrIp" : "0.0.0.0/0"
+			  }]
+			}
+		  },		
+		"rGWSampleDB": {
+			"Type": "AWS::RDS::DBInstance",
+			"Properties": {
+				"DBName": {
+					"Ref": "pDBName"
+				},
+				"AllocatedStorage": "5",				
+				"DBInstanceClass": "db.t2.large",
+				"Engine": "MySQL",
+				"EngineVersion": "5.7.16",
+				"MasterUsername": {
+					"Ref": "pDBUser"
+				},
+				"MasterUserPassword": {
+					"Ref": "pDBPassword"
+				},
+				"DBParameterGroupName": {
+					"Ref": "rGWRDSParamGroup"
+				},
+				"DBSubnetGroupName": {
+					"Ref": "rGWDBSubnetGroup"
+				},
+				"StorageEncrypted":"true",
+				"MultiAZ": "true",
+				"VPCSecurityGroups" : [ { "Fn::GetAtt": [ "rDBEC2SecurityGroup", "GroupId" ] } ],
+				"Tags": [{
+					"Key": "Name",
+					"Value": "GW-RDS"
+				}]
+			}
+		},
+
+		"rGWRDSParamGroup": {
+			"Type": "AWS::RDS::DBParameterGroup",
+			"Properties": {
+				"Family": "MySQL5.7",
+				"Description": "Guidewire Database Parameter Group",
+				"Parameters": {
+					"autocommit": "1",
+					"general_log": "1",
+					"old_passwords": "0"
+				}
+			}
+		}
+	},
+
+	"Outputs": {
+		"DBEndpoint": {
+			"Description": "JDBC connection string for the database",
+			"Value": {
+				"Fn::Join": ["", [{
+						"Fn::GetAtt": ["rGWSampleDB", "Endpoint.Address"]
+					}
+				]]
+			}
+		}
+	}
+}

@@ -1,0 +1,2802 @@
+{
+  "Description": "AutoScalingGroupTemplate",
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Vpc1000016": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Vpc1000016"
+          }
+        ]
+      }
+    },
+    "GatewayForVpc1000016": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "GatewayForVpc1000016"
+          }
+        ]
+      }
+    },
+    "AttachmentOfGatewayToVpc1000016": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "GatewayForVpc1000016"
+        },
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        }
+      }
+    },
+    "Vpc1000016FnSelect0AllZones1000024Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "CidrBlock": "10.0.0.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Ref": "AllZones"
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Vpc1000016FnSelect0AllZones1000024Subnet"
+          }
+        ]
+      }
+    },
+    "RouteTableVpc1000016Vpc1000016FnSelect0AllZones1000024Subnet": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "RouteTableVpc1000016Vpc1000016FnSelect0AllZones1000024Subnet"
+          }
+        ]
+      },
+      "DependsOn": [
+        "GatewayForVpc1000016"
+      ]
+    },
+    "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Vpc1000016FnSelect0AllZones1000024Subnet": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Vpc1000016FnSelect0AllZones1000024Subnet"
+        },
+        "GatewayId": {
+          "Ref": "GatewayForVpc1000016"
+        }
+      },
+      "DependsOn": [
+        "GatewayForVpc1000016",
+        "AttachmentOfGatewayToVpc1000016"
+      ]
+    },
+    "SubnetRouteTableAssociation4Vpc1000016FnSelect0AllZones1000024SubnetRouteTableVpc1000016Vpc1000016FnSelect0AllZones1000024Subnet": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Vpc1000016FnSelect0AllZones1000024Subnet"
+        },
+        "SubnetId": {
+          "Ref": "Vpc1000016FnSelect0AllZones1000024Subnet"
+        }
+      }
+    },
+    "NatInstance0": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "NatInstance0"
+          }
+        ],
+        "InstanceType": {
+          "Ref": "NatInstanceSize"
+        },
+        "KeyName": {
+          "Ref": "KeyNameParameterNatInstance0"
+        },
+        "SecurityGroupIds": [],
+        "ImageId": {
+          "Fn::FindInMap": [
+            "RegionMappingInfo",
+            {
+              "Ref": "AWS::Region"
+            },
+            "AmazonLinuxNatInstanceAmi"
+          ]
+        },
+        "SourceDestCheck": false,
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": true,
+            "DeviceIndex": "0",
+            "DeleteOnTermination": true,
+            "SubnetId": {
+              "Ref": "Vpc1000016FnSelect0AllZones1000024Subnet"
+            },
+            "GroupSet": [
+              {
+                "Ref": "SecurityGroupEnablesSshaccesstoNAT1inAZ1viaport22andoutboundinternetaccessviaprivatesubnetsforNatInstance0InVpc1000016"
+              }
+            ]
+          }
+        ]
+      },
+      "DependsOn": [
+        "AttachmentOfGatewayToVpc1000016"
+      ]
+    },
+    "SecurityGroupEnablesSshaccesstoNAT1inAZ1viaport22andoutboundinternetaccessviaprivatesubnetsforNatInstance0InVpc1000016": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "FromPort": "-1",
+            "ToPort": "-1",
+            "IpProtocol": "-1",
+            "CidrIp": "10.0.0.0/8"
+          }
+        ],
+        "SecurityGroupEgress": [],
+        "GroupDescription": "Enables Ssh access to NAT1 in AZ1 via port 22 and outbound internet access via private subnets for NatInstance0",
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "SecurityGroupEnablesSshaccesstoNAT1inAZ1viaport22andoutboundinternetaccessviaprivatesubnetsforNatInstance0InVpc1000016"
+          }
+        ]
+      }
+    },
+    "Vpc1000016FnSelect1AllZones1001024Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Ref": "AllZones"
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Vpc1000016FnSelect1AllZones1001024Subnet"
+          }
+        ]
+      }
+    },
+    "RouteTableVpc1000016Vpc1000016FnSelect1AllZones1001024Subnet": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "RouteTableVpc1000016Vpc1000016FnSelect1AllZones1001024Subnet"
+          }
+        ]
+      },
+      "DependsOn": [
+        "GatewayForVpc1000016"
+      ]
+    },
+    "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Vpc1000016FnSelect1AllZones1001024Subnet": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Vpc1000016FnSelect1AllZones1001024Subnet"
+        },
+        "GatewayId": {
+          "Ref": "GatewayForVpc1000016"
+        }
+      },
+      "DependsOn": [
+        "GatewayForVpc1000016",
+        "AttachmentOfGatewayToVpc1000016"
+      ]
+    },
+    "SubnetRouteTableAssociation4Vpc1000016FnSelect1AllZones1001024SubnetRouteTableVpc1000016Vpc1000016FnSelect1AllZones1001024Subnet": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Vpc1000016FnSelect1AllZones1001024Subnet"
+        },
+        "SubnetId": {
+          "Ref": "Vpc1000016FnSelect1AllZones1001024Subnet"
+        }
+      }
+    },
+    "NatInstance1": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "NatInstance1"
+          }
+        ],
+        "InstanceType": {
+          "Ref": "NatInstanceSize"
+        },
+        "KeyName": {
+          "Ref": "KeyNameParameterNatInstance1"
+        },
+        "SecurityGroupIds": [],
+        "ImageId": {
+          "Fn::FindInMap": [
+            "RegionMappingInfo",
+            {
+              "Ref": "AWS::Region"
+            },
+            "AmazonLinuxNatInstanceAmi"
+          ]
+        },
+        "SourceDestCheck": false,
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": true,
+            "DeviceIndex": "0",
+            "DeleteOnTermination": true,
+            "SubnetId": {
+              "Ref": "Vpc1000016FnSelect1AllZones1001024Subnet"
+            },
+            "GroupSet": [
+              {
+                "Ref": "SecurityGroupEnablesSshaccesstoNAT1inAZ1viaport22andoutboundinternetaccessviaprivatesubnetsforNatInstance1InVpc1000016"
+              }
+            ]
+          }
+        ]
+      },
+      "DependsOn": [
+        "AttachmentOfGatewayToVpc1000016"
+      ]
+    },
+    "SecurityGroupEnablesSshaccesstoNAT1inAZ1viaport22andoutboundinternetaccessviaprivatesubnetsforNatInstance1InVpc1000016": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "FromPort": "-1",
+            "ToPort": "-1",
+            "IpProtocol": "-1",
+            "CidrIp": "10.0.0.0/8"
+          }
+        ],
+        "SecurityGroupEgress": [],
+        "GroupDescription": "Enables Ssh access to NAT1 in AZ1 via port 22 and outbound internet access via private subnets for NatInstance1",
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "SecurityGroupEnablesSshaccesstoNAT1inAZ1viaport22andoutboundinternetaccessviaprivatesubnetsforNatInstance1InVpc1000016"
+          }
+        ]
+      }
+    },
+    "ActiveDirectory0": {
+      "Type": "AWS::DirectoryService::SimpleAD",
+      "Properties": {
+        "Name": {
+          "Ref": "DirectoryFqdn0"
+        },
+        "Password": {
+          "Ref": "DirectoryDomainAdminPassword0"
+        },
+        "ShortName": {
+          "Ref": "DirectoryShortName0"
+        },
+        "Size": "Small",
+        "VpcSettings": {
+          "VpcId": {
+            "Ref": "Vpc1000016"
+          },
+          "SubnetIds": [
+            {
+              "Ref": "Subnet0ForActiveDirectory0"
+            },
+            {
+              "Ref": "Subnet1ForActiveDirectory0"
+            }
+          ]
+        }
+      }
+    },
+    "Subnet0ForActiveDirectory0": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Ref": "AllZones"
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Subnet0ForActiveDirectory0"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "CidrBlock": "10.0.2.0/24"
+      }
+    },
+    "Subnet1ForActiveDirectory0": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Ref": "AllZones"
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Subnet1ForActiveDirectory0"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "CidrBlock": "10.0.3.0/24"
+      }
+    },
+    "DhcpVpc1000016DirectoryFqdn0": {
+      "Type": "AWS::EC2::DHCPOptions",
+      "Properties": {
+        "DomainNameServers": {
+          "Fn::GetAtt": [
+            "ActiveDirectory0",
+            "DnsIpAddresses"
+          ]
+        },
+        "NetbiosNameServers": {
+          "Fn::GetAtt": [
+            "ActiveDirectory0",
+            "DnsIpAddresses"
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "DhcpVpc1000016DirectoryFqdn0"
+          }
+        ]
+      }
+    },
+    "DhcpOptionsAssociationForDhcpVpc1000016DirectoryFqdn0ToVpc1000016": {
+      "Type": "AWS::EC2::VPCDHCPOptionsAssociation",
+      "Properties": {
+        "DhcpOptionsId": {
+          "Ref": "DhcpVpc1000016DirectoryFqdn0"
+        },
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        }
+      }
+    },
+    "AutoScalingGroup0": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "MinSize": {
+          "Ref": "MinInstancesParameterAutoScalingGroup0"
+        },
+        "MaxSize": {
+          "Ref": "MaxInstancesParameterAutoScalingGroup0"
+        },
+        "AvailabilityZones": [],
+        "VPCZoneIdentifier": [
+          {
+            "Ref": "Subnet0ForAutoScalingGroup0LaunchConfiguration"
+          },
+          {
+            "Ref": "Subnet1ForAutoScalingGroup0LaunchConfiguration"
+          }
+        ],
+        "MetricsCollection": [
+          {
+            "Granularity": "1Minute",
+            "Metrics": [
+              "GroupMinSize",
+              "GroupMaxSize"
+            ]
+          }
+        ],
+        "LoadBalancerNames": [
+          {
+            "Ref": "LoadBalancerFor"
+          }
+        ],
+        "LaunchConfigurationName": {
+          "Ref": "LaunchConfigurationForAutoScalingGroup0"
+        }
+      },
+      "DependsOn": [
+        "AttachmentOfGatewayToVpc1000016",
+        "ActiveDirectory0"
+      ]
+    },
+    "LaunchConfigurationForAutoScalingGroup0": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "InstanceType": {
+          "Ref": "InstanceTypeParameterLaunchConfigurationForAutoScalingGroup0"
+        },
+        "KeyName": {
+          "Ref": "KeyNameParameterLaunchConfigurationForAutoScalingGroup0"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "SecurityGroupDefaultGroupforLaunchConfigurationForAutoScalingGroup0InVpc1000016"
+          },
+          {
+            "Ref": "SecurityGroupAllowsaccessfromtheRDGWInVpc1000016"
+          },
+          {
+            "Ref": "SecurityGroupForIisPackageInVpc1000016"
+          }
+        ],
+        "ImageId": {
+          "Fn::FindInMap": [
+            "RegionMappingInfo",
+            {
+              "Ref": "AWS::Region"
+            },
+            "Windows"
+          ]
+        },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "<script>",
+                "cfn-init.exe -v -c ",
+                "LaunchConfigurationConfigSet,ChefConfigSet",
+                " -s ",
+                {
+                  "Ref": "AWS::StackId"
+                },
+                " -r LaunchConfigurationForAutoScalingGroup0 --region ",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "</script>"
+              ]
+            ]
+          }
+        }
+      },
+      "Metadata": {
+        "AWS::CloudFormation::Init": {
+          "configSets": {
+            "LaunchConfigurationConfigSet": [
+              "LaunchConfigurationConfig"
+            ],
+            "ChefConfigSet": [
+              "ChefConfig"
+            ]
+          },
+          "LaunchConfigurationConfig": {
+            "commands": {
+              "000powershellexeCommandGetNetFirewallProfileSetNetFirewallProfileEnabledFalse": {
+                "waitAfterCompletion": "0",
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "powershell.exe ",
+                      "-Command \"Get-NetFirewallProfile | Set-NetFirewallProfile -Enabled False\""
+                    ]
+                  ]
+                }
+              },
+              "001tutilsEasternStandardTime": {
+                "waitAfterCompletion": "0",
+                "command": "tzutil /s \"Eastern Standard Time\""
+              }
+            },
+            "files": {
+              "c:\\cfn\\cfn-hup.conf": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "[main]\nstack=",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      "\nregion=",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "\ninterval=1\nverbose=true"
+                    ]
+                  ]
+                }
+              },
+              "c:\\cfn\\hooks.d\\cfn-auto-reloader.conf": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "[cfn-auto-reloader-hook]\n",
+                      "triggers=post.update\n",
+                      "path=Resources.LaunchConfigurationForAutoScalingGroup0.Metadata.AWS::CloudFormation::Init\n",
+                      "action=",
+                      "cfn-init.exe -v -c ",
+                      "LaunchConfigurationConfigSet,ChefConfigSet",
+                      " -s ",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      " -r ",
+                      "LaunchConfigurationForAutoScalingGroup0",
+                      " --region ",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "\n"
+                    ]
+                  ]
+                }
+              }
+            },
+            "services": {
+              "windows": {
+                "cfn-hup": {
+                  "enabled": true,
+                  "ensureRunning": true,
+                  "files": [
+                    "c:\\cfn\\cfn-hup.conf",
+                    "c:\\cfn\\hooks.d\\cfn-auto-reloader.conf"
+                  ]
+                }
+              }
+            },
+            "sources": {},
+            "packages": {
+              "msi": {}
+            }
+          },
+          "ChefConfig": {
+            "commands": {
+              "000CopscodechefdkbinberksvendorbccfnfilesberksIisPackageberksfileccfnfilescookbooksiispackage": {
+                "waitAfterCompletion": "0",
+                "command": "C:/opscode/chefdk/bin/berks vendor -b c:/cfn/files/berks/IisPackage/berksfile c:/cfn/files/cookbooks/iispackage"
+              },
+              "001Copscodechefdkbinchefclientbatoiisdefaultiismodaspnet45iismodauthwindowsiismodcompressdynamiciismodloggingiismodsecurityiismodtracingccchefyadayadaiisclientrb": {
+                "waitAfterCompletion": "0",
+                "command": "C:/opscode/chefdk/bin/chef-client.bat -z -o iis::default,iis::mod_aspnet45,iis::mod_auth_windows,iis::mod_compress_dynamic,iis::mod_logging,iis::mod_security,iis::mod_tracing -c c:/chef/yadayada_iis/client.rb"
+              },
+              "002cfnsignalexee0WaitForIisPackageyadayadaiisOn4LaunchConfigurationForAutoScalingGroup0ccfnlogWaitWaitForIisPackageyadayadaiisOn4LaunchConfigurationForAutoScalingGroup0log": {
+                "waitAfterCompletion": "0",
+                "ignoreErrors": "True",
+                "test": "IF EXIST \"c:\\cfn\\log\\WaitWaitForIisPackageyadayadaiisOn4LaunchConfigurationForAutoScalingGroup0.log\" EXIT /B 1",
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "cfn-signal.exe -e 0 \"",
+                      {
+                        "Ref": "WaitForIisPackageyadayadaiisOn4LaunchConfigurationForAutoScalingGroup0"
+                      },
+                      "\">c:\\cfn\\log\\WaitWaitForIisPackageyadayadaiisOn4LaunchConfigurationForAutoScalingGroup0.log"
+                    ]
+                  ]
+                }
+              }
+            },
+            "files": {
+              "c:/chef/yadayada_iis/node.json": {
+                "content": {
+                  "dummyNode": "dummyValue"
+                }
+              },
+              "c:/chef/yadayada_iis/client.rb": {
+                "content": {
+                  "Fn::Join": [
+                    "\n",
+                    [
+                      "cache_path 'c:/chef'",
+                      "cookbook_path 'c:/cfn/files/cookbooks/iispackage'",
+                      "local_mode true",
+                      "json_attribs 'c:/chef/yadayada_iis/node.json'"
+                    ]
+                  ]
+                }
+              },
+              "c:/cfn/files/berks/IisPackage/berksfile": {
+                "content": {
+                  "Fn::Join": [
+                    "\n",
+                    [
+                      "source \"https://supermarket.chef.io\"",
+                      "metadata",
+                      "cookbook 'iis'"
+                    ]
+                  ]
+                }
+              },
+              "c:/cfn/files/berks/IisPackage/metadata.rb": {
+                "content": {
+                  "Fn::Join": [
+                    "\n",
+                    [
+                      "name 'yadayada_iis'",
+                      "version '0.1.0'",
+                      "depends 'iis'"
+                    ]
+                  ]
+                }
+              }
+            },
+            "services": {},
+            "sources": {},
+            "packages": {
+              "msi": {
+                "stablewindows2008r2chefdk014251x86msi": "https://packages.chef.io/stable/windows/2008r2/chefdk-0.14.25-1-x86.msi"
+              }
+            }
+          }
+        }
+      }
+    },
+    "Subnet0ForAutoScalingGroup0LaunchConfiguration": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Subnet0ForAutoScalingGroup0LaunchConfiguration"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "CidrBlock": "10.0.4.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Ref": "AllZones"
+            }
+          ]
+        }
+      }
+    },
+    "RouteTableVpc1000016Subnet0ForAutoScalingGroup0LaunchConfiguration": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "RouteTableVpc1000016Subnet0ForAutoScalingGroup0LaunchConfiguration"
+          }
+        ]
+      },
+      "DependsOn": [
+        "GatewayForVpc1000016"
+      ]
+    },
+    "RouteFrom00000ToNatInstance0": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Subnet0ForAutoScalingGroup0LaunchConfiguration"
+        },
+        "InstanceId": {
+          "Ref": "NatInstance0"
+        }
+      },
+      "DependsOn": [
+        "NatInstance0",
+        "AttachmentOfGatewayToVpc1000016"
+      ]
+    },
+    "SubnetRouteTableAssociation4Subnet0ForAutoScalingGroup0LaunchConfigurationRouteTableVpc1000016Subnet0ForAutoScalingGroup0LaunchConfiguration": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Subnet0ForAutoScalingGroup0LaunchConfiguration"
+        },
+        "SubnetId": {
+          "Ref": "Subnet0ForAutoScalingGroup0LaunchConfiguration"
+        }
+      }
+    },
+    "Subnet1ForAutoScalingGroup0LaunchConfiguration": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Subnet1ForAutoScalingGroup0LaunchConfiguration"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "CidrBlock": "10.0.5.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Ref": "AllZones"
+            }
+          ]
+        }
+      }
+    },
+    "RouteTableVpc1000016Subnet1ForAutoScalingGroup0LaunchConfiguration": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "RouteTableVpc1000016Subnet1ForAutoScalingGroup0LaunchConfiguration"
+          }
+        ]
+      },
+      "DependsOn": [
+        "GatewayForVpc1000016"
+      ]
+    },
+    "RouteFrom00000ToNatInstance1": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Subnet1ForAutoScalingGroup0LaunchConfiguration"
+        },
+        "InstanceId": {
+          "Ref": "NatInstance1"
+        }
+      },
+      "DependsOn": [
+        "NatInstance1",
+        "AttachmentOfGatewayToVpc1000016"
+      ]
+    },
+    "SubnetRouteTableAssociation4Subnet1ForAutoScalingGroup0LaunchConfigurationRouteTableVpc1000016Subnet1ForAutoScalingGroup0LaunchConfiguration": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Subnet1ForAutoScalingGroup0LaunchConfiguration"
+        },
+        "SubnetId": {
+          "Ref": "Subnet1ForAutoScalingGroup0LaunchConfiguration"
+        }
+      }
+    },
+    "Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "CidrBlock": "10.0.6.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Ref": "AllZones"
+            }
+          ]
+        }
+      }
+    },
+    "RouteTableVpc1000016Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "RouteTableVpc1000016Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+          }
+        ]
+      },
+      "DependsOn": [
+        "GatewayForVpc1000016"
+      ]
+    },
+    "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+        },
+        "GatewayId": {
+          "Ref": "GatewayForVpc1000016"
+        }
+      },
+      "DependsOn": [
+        "GatewayForVpc1000016",
+        "AttachmentOfGatewayToVpc1000016"
+      ]
+    },
+    "SubnetRouteTableAssociation4Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0RouteTableVpc1000016Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+        },
+        "SubnetId": {
+          "Ref": "Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+        }
+      }
+    },
+    "Rdp0": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Rdp0"
+          }
+        ],
+        "InstanceType": "t2.nano",
+        "KeyName": {
+          "Ref": "KeyNameParameterRdp0"
+        },
+        "SecurityGroupIds": [
+          {
+            "Ref": "SecurityGroupForRemoteDesktopGatewayPackageInVpc1000016"
+          },
+          {
+            "Ref": "SecurityGroupRemoteDesktopInVpc1000016"
+          }
+        ],
+        "SubnetId": {
+          "Ref": "Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+        },
+        "ImageId": {
+          "Fn::FindInMap": [
+            "RegionMappingInfo",
+            {
+              "Ref": "AWS::Region"
+            },
+            "w2k12r2BaseAmi"
+          ]
+        },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "<script>",
+                "cfn-init.exe -v -c ",
+                "LaunchConfigurationConfigSet,AddToDomain,RemoteDesktopGatewayPackage",
+                " -s ",
+                {
+                  "Ref": "AWS::StackId"
+                },
+                " -r Rdp0 --region ",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "</script>"
+              ]
+            ]
+          }
+        },
+        "SourceDestCheck": true,
+        "NetworkInterfaces": []
+      },
+      "Metadata": {
+        "AWS::CloudFormation::Init": {
+          "configSets": {
+            "LaunchConfigurationConfigSet": [
+              "LaunchConfigurationConfig",
+              "Rename"
+            ],
+            "AddToDomain": [
+              "AddToDomain"
+            ],
+            "RemoteDesktopGatewayPackage": [
+              "RemoteDesktopGatewayPackage"
+            ]
+          },
+          "LaunchConfigurationConfig": {
+            "commands": {
+              "000powershellexeCommandGetNetFirewallProfileSetNetFirewallProfileEnabledFalse": {
+                "waitAfterCompletion": "0",
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "powershell.exe ",
+                      "-Command \"Get-NetFirewallProfile | Set-NetFirewallProfile -Enabled False\""
+                    ]
+                  ]
+                }
+              },
+              "001tutilsEasternStandardTime": {
+                "waitAfterCompletion": "0",
+                "command": "tzutil /s \"Eastern Standard Time\""
+              },
+              "002powershellexeCommandGetNetFirewallProfileSetNetFirewallProfileEnabledFalse": {
+                "waitAfterCompletion": "0",
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "powershell.exe ",
+                      "-Command \"Get-NetFirewallProfile | Set-NetFirewallProfile -Enabled False\""
+                    ]
+                  ]
+                }
+              },
+              "003tutilsEasternStandardTime": {
+                "waitAfterCompletion": "0",
+                "command": "tzutil /s \"Eastern Standard Time\""
+              }
+            },
+            "files": {
+              "c:\\cfn\\cfn-hup.conf": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "[main]\nstack=",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      "\nregion=",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "\ninterval=1\nverbose=true"
+                    ]
+                  ]
+                }
+              },
+              "c:\\cfn\\hooks.d\\cfn-auto-reloader.conf": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "[cfn-auto-reloader-hook]\n",
+                      "triggers=post.update\n",
+                      "path=Resources.Rdp0.Metadata.AWS::CloudFormation::Init\n",
+                      "action=",
+                      "cfn-init.exe -v -c ",
+                      "LaunchConfigurationConfigSet,AddToDomain,RemoteDesktopGatewayPackage",
+                      " -s ",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      " -r ",
+                      "Rdp0",
+                      " --region ",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "\n"
+                    ]
+                  ]
+                }
+              }
+            },
+            "services": {
+              "windows": {
+                "cfn-hup": {
+                  "enabled": true,
+                  "ensureRunning": true,
+                  "files": [
+                    "c:\\cfn\\cfn-hup.conf",
+                    "c:\\cfn\\hooks.d\\cfn-auto-reloader.conf"
+                  ]
+                }
+              }
+            },
+            "sources": {},
+            "packages": {
+              "msi": {}
+            }
+          },
+          "Rename": {
+            "commands": {
+              "000powershellexeRenameComputerNewNameRdp0ForceRestart": {
+                "waitAfterCompletion": "922337203685.478",
+                "test": "IF \"%COMPUTERNAME%\"==\"RDP0\" EXIT /B 1 ELSE EXIT /B 0",
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "powershell.exe ",
+                      "\"Rename-Computer -NewName Rdp0 -Force -Restart\""
+                    ]
+                  ]
+                }
+              }
+            },
+            "files": {},
+            "services": {},
+            "sources": {},
+            "packages": {
+              "msi": {}
+            }
+          },
+          "AddToDomain": {
+            "commands": {
+              "000powershellexeCommandAddComputerDomainNameDirectoryFqdn0CredentialNewObjectSystemManagementAutomationPSCredentialadministratorDirectoryFqdn0ConvertToSecureStringDirectoryDomainAdminPassword0AsPlainTextForceRestart": {
+                "waitAfterCompletion": "forever",
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "powershell.exe ",
+                      "-Command \"",
+                      "Add-Computer -DomainName ",
+                      {
+                        "Ref": "DirectoryFqdn0"
+                      },
+                      " -Credential (New-Object System.Management.Automation.PSCredential('",
+                      "administrator",
+                      "@",
+                      {
+                        "Ref": "DirectoryFqdn0"
+                      },
+                      "',(ConvertTo-SecureString \"",
+                      {
+                        "Ref": "DirectoryDomainAdminPassword0"
+                      },
+                      "\" -AsPlainText -Force))) ",
+                      "-Restart\""
+                    ]
+                  ]
+                },
+                "test": "powershell.exe -ExecutionPolicy RemoteSigned c:/cfn/scripts/check-for-domain.ps1"
+              }
+            },
+            "files": {
+              "c:/cfn/scripts/check-for-domain.ps1": {
+                "content": {
+                  "Fn::Join": [
+                    "\n",
+                    [
+                      "if ((gwmi win32_computersystem).partofdomain -eq $true) {",
+                      "    Write-Host \"Already in domain: $domain\"",
+                      "    exit 1",
+                      "} else {",
+                      "    Write-Host \"Needs to be added to domain: $domain\"",
+                      "    exit 0",
+                      "}"
+                    ]
+                  ]
+                }
+              }
+            },
+            "services": {},
+            "sources": {},
+            "packages": {
+              "msi": {}
+            }
+          },
+          "RemoteDesktopGatewayPackage": {
+            "commands": {
+              "000powershellexeCommandInstallWindowsFeatureRDSGatewayRSATRDSGateway": {
+                "waitAfterCompletion": "0",
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "powershell.exe ",
+                      "-Command \"Install-WindowsFeature RDS-Gateway,RSAT-RDS-Gateway\""
+                    ]
+                  ]
+                }
+              },
+              "001powershellexeExecutionPolicyRemoteSignedExecutionPolicyRemoteSignedCcfnscriptsConfigureRDGWps1ServerFQDNRdp0DirectoryFqdn0DomainNetBiosNameDirectoryShortName0GroupNameDomainUsers": {
+                "waitAfterCompletion": "0",
+                "test": "IF EXIST c:/rdp.cer EXIT 1",
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "powershell.exe -ExecutionPolicy RemoteSigned ",
+                      "-ExecutionPolicy",
+                      "RemoteSigned",
+                      "C:\\cfn\\scripts\\Configure-RDGW.ps1",
+                      "-ServerFQDN",
+                      {
+                        "Fn::Join": [
+                          ".",
+                          [
+                            "Rdp0",
+                            {
+                              "Ref": "DirectoryFqdn0"
+                            }
+                          ]
+                        ]
+                      },
+                      "-DomainNetBiosName",
+                      {
+                        "Ref": "DirectoryShortName0"
+                      },
+                      "-GroupName",
+                      "'Domain Users'"
+                    ]
+                  ]
+                }
+              },
+              "002cfnsignalexee0WaitForRemoteDesktopGatewayPackageOn4Rdp0ccfnlogWaitWaitForRemoteDesktopGatewayPackageOn4Rdp0log": {
+                "waitAfterCompletion": "0",
+                "ignoreErrors": "True",
+                "test": "IF EXIST \"c:\\cfn\\log\\WaitWaitForRemoteDesktopGatewayPackageOn4Rdp0.log\" EXIT /B 1",
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "cfn-signal.exe -e 0 \"",
+                      {
+                        "Ref": "WaitForRemoteDesktopGatewayPackageOn4Rdp0"
+                      },
+                      "\">c:\\cfn\\log\\WaitWaitForRemoteDesktopGatewayPackageOn4Rdp0.log"
+                    ]
+                  ]
+                }
+              }
+            },
+            "files": {
+              "c:\\cfn\\scripts\\Configure-RDGW.ps1": {
+                "source": "https://s3.amazonaws.com/microsoft_windows/scripts/Configure-RDGW.ps1"
+              }
+            },
+            "services": {},
+            "sources": {},
+            "packages": {
+              "msi": {}
+            }
+          }
+        }
+      },
+      "DependsOn": [
+        "AttachmentOfGatewayToVpc1000016",
+        "ActiveDirectory0"
+      ]
+    },
+    "SecurityGroupForRemoteDesktopGatewayPackageInVpc1000016": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [],
+        "SecurityGroupEgress": [],
+        "GroupDescription": "SecurityGroupForRemoteDesktopGatewayPackage",
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "SecurityGroupForRemoteDesktopGatewayPackageInVpc1000016"
+          }
+        ]
+      }
+    },
+    "ElasticIpvpcRdp0": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc",
+        "InstanceId": {
+          "Ref": "Rdp0"
+        }
+      },
+      "DependsOn": [
+        "AttachmentOfGatewayToVpc1000016"
+      ]
+    },
+    "HostedZoneNameRecordSet0": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "Type": "A",
+        "Name": {
+          "Fn::Join": [
+            ".",
+            [
+              "rdp0",
+              {
+                "Ref": "DirectoryFqdn0"
+              }
+            ]
+          ]
+        },
+        "TTL": "600",
+        "ResourceRecords": [
+          {
+            "Ref": "ElasticIpvpcRdp0"
+          }
+        ],
+        "HostedZoneName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "DirectoryFqdn0"
+              },
+              "."
+            ]
+          ]
+        }
+      }
+    },
+    "SecurityGroupRemoteDesktopInVpc1000016": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "FromPort": "3389",
+            "ToPort": "3389",
+            "IpProtocol": "tcp",
+            "CidrIp": {
+              "Ref": "AccessCidrParameterRdp1"
+            }
+          },
+          {
+            "FromPort": "443",
+            "ToPort": "443",
+            "IpProtocol": "tcp",
+            "CidrIp": {
+              "Ref": "AccessCidrParameterRdp1"
+            }
+          },
+          {
+            "FromPort": "80",
+            "ToPort": "80",
+            "IpProtocol": "tcp",
+            "CidrIp": {
+              "Ref": "AccessCidrParameterRdp1"
+            }
+          },
+          {
+            "FromPort": "3391",
+            "ToPort": "3391",
+            "IpProtocol": "udp",
+            "CidrIp": {
+              "Ref": "AccessCidrParameterRdp1"
+            }
+          },
+          {
+            "FromPort": "-1",
+            "ToPort": "-1",
+            "IpProtocol": "icmp",
+            "CidrIp": {
+              "Ref": "AccessCidrParameterRdp1"
+            }
+          }
+        ],
+        "SecurityGroupEgress": [],
+        "GroupDescription": "Remote Desktop Security Group",
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "SecurityGroupRemoteDesktopInVpc1000016"
+          }
+        ]
+      }
+    },
+    "SecurityGroupDefaultGroupforLaunchConfigurationForAutoScalingGroup0InVpc1000016": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [],
+        "SecurityGroupEgress": [],
+        "GroupDescription": "Default Group for LaunchConfigurationForAutoScalingGroup0",
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "SecurityGroupDefaultGroupforLaunchConfigurationForAutoScalingGroup0InVpc1000016"
+          }
+        ]
+      }
+    },
+    "SecurityGroupAllowsaccessfromtheRDGWInVpc1000016": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "FromPort": "3389",
+            "ToPort": "3389",
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {
+              "Ref": "SecurityGroupRemoteDesktopInVpc1000016"
+            }
+          },
+          {
+            "FromPort": "3389",
+            "ToPort": "3389",
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {
+              "Ref": "SecurityGroupRemoteDesktopInVpc1000016"
+            }
+          }
+        ],
+        "SecurityGroupEgress": [],
+        "GroupDescription": "Allows access from the RDGW.",
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "SecurityGroupAllowsaccessfromtheRDGWInVpc1000016"
+          }
+        ]
+      }
+    },
+    "WaitWaitForRemoteDesktopGatewayPackageOn4Rdp0": {
+      "Type": "AWS::CloudFormation::WaitCondition",
+      "Properties": {
+        "Timeout": 43200,
+        "Handle": {
+          "Ref": "WaitForRemoteDesktopGatewayPackageOn4Rdp0"
+        }
+      },
+      "DependsOn": [
+        "Rdp0"
+      ]
+    },
+    "WaitForRemoteDesktopGatewayPackageOn4Rdp0": {
+      "Type": "AWS::CloudFormation::WaitConditionHandle",
+      "Properties": {}
+    },
+    "Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "CidrBlock": "10.0.7.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Ref": "AllZones"
+            }
+          ]
+        }
+      }
+    },
+    "RouteTableVpc1000016Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "RouteTableVpc1000016Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+          }
+        ]
+      },
+      "DependsOn": [
+        "GatewayForVpc1000016"
+      ]
+    },
+    "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+        },
+        "GatewayId": {
+          "Ref": "GatewayForVpc1000016"
+        }
+      },
+      "DependsOn": [
+        "GatewayForVpc1000016",
+        "AttachmentOfGatewayToVpc1000016"
+      ]
+    },
+    "SubnetRouteTableAssociation4Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0RouteTableVpc1000016Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+        },
+        "SubnetId": {
+          "Ref": "Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+        }
+      }
+    },
+    "Rdp1": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Rdp1"
+          }
+        ],
+        "InstanceType": "t2.nano",
+        "KeyName": {
+          "Ref": "KeyNameParameterRdp1"
+        },
+        "SecurityGroupIds": [
+          {
+            "Ref": "SecurityGroupForRemoteDesktopGatewayPackageInVpc1000016"
+          },
+          {
+            "Ref": "SecurityGroupRemoteDesktopInVpc1000016"
+          }
+        ],
+        "SubnetId": {
+          "Ref": "Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+        },
+        "ImageId": {
+          "Fn::FindInMap": [
+            "RegionMappingInfo",
+            {
+              "Ref": "AWS::Region"
+            },
+            "w2k12r2BaseAmi"
+          ]
+        },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "<script>",
+                "cfn-init.exe -v -c ",
+                "LaunchConfigurationConfigSet,AddToDomain,RemoteDesktopGatewayPackage",
+                " -s ",
+                {
+                  "Ref": "AWS::StackId"
+                },
+                " -r Rdp1 --region ",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "</script>"
+              ]
+            ]
+          }
+        },
+        "SourceDestCheck": true,
+        "NetworkInterfaces": []
+      },
+      "Metadata": {
+        "AWS::CloudFormation::Init": {
+          "configSets": {
+            "LaunchConfigurationConfigSet": [
+              "LaunchConfigurationConfig",
+              "Rename"
+            ],
+            "AddToDomain": [
+              "AddToDomain"
+            ],
+            "RemoteDesktopGatewayPackage": [
+              "RemoteDesktopGatewayPackage"
+            ]
+          },
+          "LaunchConfigurationConfig": {
+            "commands": {
+              "000powershellexeCommandGetNetFirewallProfileSetNetFirewallProfileEnabledFalse": {
+                "waitAfterCompletion": "0",
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "powershell.exe ",
+                      "-Command \"Get-NetFirewallProfile | Set-NetFirewallProfile -Enabled False\""
+                    ]
+                  ]
+                }
+              },
+              "001tutilsEasternStandardTime": {
+                "waitAfterCompletion": "0",
+                "command": "tzutil /s \"Eastern Standard Time\""
+              },
+              "002powershellexeCommandGetNetFirewallProfileSetNetFirewallProfileEnabledFalse": {
+                "waitAfterCompletion": "0",
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "powershell.exe ",
+                      "-Command \"Get-NetFirewallProfile | Set-NetFirewallProfile -Enabled False\""
+                    ]
+                  ]
+                }
+              },
+              "003tutilsEasternStandardTime": {
+                "waitAfterCompletion": "0",
+                "command": "tzutil /s \"Eastern Standard Time\""
+              }
+            },
+            "files": {
+              "c:\\cfn\\cfn-hup.conf": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "[main]\nstack=",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      "\nregion=",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "\ninterval=1\nverbose=true"
+                    ]
+                  ]
+                }
+              },
+              "c:\\cfn\\hooks.d\\cfn-auto-reloader.conf": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "[cfn-auto-reloader-hook]\n",
+                      "triggers=post.update\n",
+                      "path=Resources.Rdp1.Metadata.AWS::CloudFormation::Init\n",
+                      "action=",
+                      "cfn-init.exe -v -c ",
+                      "LaunchConfigurationConfigSet,AddToDomain,RemoteDesktopGatewayPackage",
+                      " -s ",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      " -r ",
+                      "Rdp1",
+                      " --region ",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "\n"
+                    ]
+                  ]
+                }
+              }
+            },
+            "services": {
+              "windows": {
+                "cfn-hup": {
+                  "enabled": true,
+                  "ensureRunning": true,
+                  "files": [
+                    "c:\\cfn\\cfn-hup.conf",
+                    "c:\\cfn\\hooks.d\\cfn-auto-reloader.conf"
+                  ]
+                }
+              }
+            },
+            "sources": {},
+            "packages": {
+              "msi": {}
+            }
+          },
+          "Rename": {
+            "commands": {
+              "000powershellexeRenameComputerNewNameRdp1ForceRestart": {
+                "waitAfterCompletion": "922337203685.478",
+                "test": "IF \"%COMPUTERNAME%\"==\"RDP1\" EXIT /B 1 ELSE EXIT /B 0",
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "powershell.exe ",
+                      "\"Rename-Computer -NewName Rdp1 -Force -Restart\""
+                    ]
+                  ]
+                }
+              }
+            },
+            "files": {},
+            "services": {},
+            "sources": {},
+            "packages": {
+              "msi": {}
+            }
+          },
+          "AddToDomain": {
+            "commands": {
+              "000powershellexeCommandAddComputerDomainNameDirectoryFqdn0CredentialNewObjectSystemManagementAutomationPSCredentialadministratorDirectoryFqdn0ConvertToSecureStringDirectoryDomainAdminPassword0AsPlainTextForceRestart": {
+                "waitAfterCompletion": "forever",
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "powershell.exe ",
+                      "-Command \"",
+                      "Add-Computer -DomainName ",
+                      {
+                        "Ref": "DirectoryFqdn0"
+                      },
+                      " -Credential (New-Object System.Management.Automation.PSCredential('",
+                      "administrator",
+                      "@",
+                      {
+                        "Ref": "DirectoryFqdn0"
+                      },
+                      "',(ConvertTo-SecureString \"",
+                      {
+                        "Ref": "DirectoryDomainAdminPassword0"
+                      },
+                      "\" -AsPlainText -Force))) ",
+                      "-Restart\""
+                    ]
+                  ]
+                },
+                "test": "powershell.exe -ExecutionPolicy RemoteSigned c:/cfn/scripts/check-for-domain.ps1"
+              }
+            },
+            "files": {
+              "c:/cfn/scripts/check-for-domain.ps1": {
+                "content": {
+                  "Fn::Join": [
+                    "\n",
+                    [
+                      "if ((gwmi win32_computersystem).partofdomain -eq $true) {",
+                      "    Write-Host \"Already in domain: $domain\"",
+                      "    exit 1",
+                      "} else {",
+                      "    Write-Host \"Needs to be added to domain: $domain\"",
+                      "    exit 0",
+                      "}"
+                    ]
+                  ]
+                }
+              }
+            },
+            "services": {},
+            "sources": {},
+            "packages": {
+              "msi": {}
+            }
+          },
+          "RemoteDesktopGatewayPackage": {
+            "commands": {
+              "000powershellexeCommandInstallWindowsFeatureRDSGatewayRSATRDSGateway": {
+                "waitAfterCompletion": "0",
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "powershell.exe ",
+                      "-Command \"Install-WindowsFeature RDS-Gateway,RSAT-RDS-Gateway\""
+                    ]
+                  ]
+                }
+              },
+              "001powershellexeExecutionPolicyRemoteSignedExecutionPolicyRemoteSignedCcfnscriptsConfigureRDGWps1ServerFQDNRdp1DirectoryFqdn0DomainNetBiosNameDirectoryShortName0GroupNameDomainUsers": {
+                "waitAfterCompletion": "0",
+                "test": "IF EXIST c:/rdp.cer EXIT 1",
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "powershell.exe -ExecutionPolicy RemoteSigned ",
+                      "-ExecutionPolicy",
+                      "RemoteSigned",
+                      "C:\\cfn\\scripts\\Configure-RDGW.ps1",
+                      "-ServerFQDN",
+                      {
+                        "Fn::Join": [
+                          ".",
+                          [
+                            "Rdp1",
+                            {
+                              "Ref": "DirectoryFqdn0"
+                            }
+                          ]
+                        ]
+                      },
+                      "-DomainNetBiosName",
+                      {
+                        "Ref": "DirectoryShortName0"
+                      },
+                      "-GroupName",
+                      "'Domain Users'"
+                    ]
+                  ]
+                }
+              },
+              "002cfnsignalexee0WaitForRemoteDesktopGatewayPackageOn4Rdp1ccfnlogWaitWaitForRemoteDesktopGatewayPackageOn4Rdp1log": {
+                "waitAfterCompletion": "0",
+                "ignoreErrors": "True",
+                "test": "IF EXIST \"c:\\cfn\\log\\WaitWaitForRemoteDesktopGatewayPackageOn4Rdp1.log\" EXIT /B 1",
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "cfn-signal.exe -e 0 \"",
+                      {
+                        "Ref": "WaitForRemoteDesktopGatewayPackageOn4Rdp1"
+                      },
+                      "\">c:\\cfn\\log\\WaitWaitForRemoteDesktopGatewayPackageOn4Rdp1.log"
+                    ]
+                  ]
+                }
+              }
+            },
+            "files": {
+              "c:\\cfn\\scripts\\Configure-RDGW.ps1": {
+                "source": "https://s3.amazonaws.com/microsoft_windows/scripts/Configure-RDGW.ps1"
+              }
+            },
+            "services": {},
+            "sources": {},
+            "packages": {
+              "msi": {}
+            }
+          }
+        }
+      },
+      "DependsOn": [
+        "AttachmentOfGatewayToVpc1000016",
+        "ActiveDirectory0"
+      ]
+    },
+    "ElasticIpvpcRdp1": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc",
+        "InstanceId": {
+          "Ref": "Rdp1"
+        }
+      },
+      "DependsOn": [
+        "AttachmentOfGatewayToVpc1000016"
+      ]
+    },
+    "HostedZoneNameRecordSet1": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "Type": "A",
+        "Name": {
+          "Fn::Join": [
+            ".",
+            [
+              "rdp1",
+              {
+                "Ref": "DirectoryFqdn0"
+              }
+            ]
+          ]
+        },
+        "TTL": "600",
+        "ResourceRecords": [
+          {
+            "Ref": "ElasticIpvpcRdp1"
+          }
+        ],
+        "HostedZoneName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "DirectoryFqdn0"
+              },
+              "."
+            ]
+          ]
+        }
+      }
+    },
+    "WaitWaitForRemoteDesktopGatewayPackageOn4Rdp1": {
+      "Type": "AWS::CloudFormation::WaitCondition",
+      "Properties": {
+        "Timeout": 43200,
+        "Handle": {
+          "Ref": "WaitForRemoteDesktopGatewayPackageOn4Rdp1"
+        }
+      },
+      "DependsOn": [
+        "Rdp1"
+      ]
+    },
+    "WaitForRemoteDesktopGatewayPackageOn4Rdp1": {
+      "Type": "AWS::CloudFormation::WaitConditionHandle",
+      "Properties": {}
+    },
+    "LoadBalancerFor": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "SecurityGroups": [
+          {
+            "Ref": "SecurityGroupforELBInVpc1000016"
+          },
+          {
+            "Ref": "SecurityGroupDefaultforLoadBalancerForInVpc1000016"
+          }
+        ],
+        "CrossZone": true,
+        "Listeners": [
+          {
+            "LoadBalancerPort": 80,
+            "InstancePort": 80,
+            "Protocol": "HTTP"
+          }
+        ],
+        "Subnets": [
+          {
+            "Ref": "Vpc1000016FnSelect0AllZones1008024Subnet"
+          },
+          {
+            "Ref": "Vpc1000016FnSelect1AllZones10010024Subnet"
+          }
+        ],
+        "Instances": [],
+        "HealthCheck": {
+          "HealthyThreshold": 2,
+          "Interval": 60,
+          "Target": "HTTP:80/",
+          "Timeout": 5,
+          "UnhealthyThreshold": 10
+        }
+      },
+      "DependsOn": [
+        "AttachmentOfGatewayToVpc1000016"
+      ]
+    },
+    "HostedZoneNameRecordSet2": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "Type": "CNAME",
+        "Name": {
+          "Ref": "DomainNameParameter3"
+        },
+        "TTL": {
+          "Ref": "TimeToLiveParameter3"
+        },
+        "ResourceRecords": [
+          {
+            "Fn::GetAtt": [
+              "LoadBalancerFor",
+              "DNSName"
+            ]
+          }
+        ],
+        "HostedZoneName": {
+          "Ref": "HostedZoneNameParameter3"
+        }
+      }
+    },
+    "Vpc1000016FnSelect0AllZones1008024Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "CidrBlock": "10.0.8.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Ref": "AllZones"
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Vpc1000016FnSelect0AllZones1008024Subnet"
+          }
+        ]
+      }
+    },
+    "RouteTableVpc1000016Vpc1000016FnSelect0AllZones1008024Subnet": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "RouteTableVpc1000016Vpc1000016FnSelect0AllZones1008024Subnet"
+          }
+        ]
+      },
+      "DependsOn": [
+        "GatewayForVpc1000016"
+      ]
+    },
+    "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Vpc1000016FnSelect0AllZones1008024Subnet": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Vpc1000016FnSelect0AllZones1008024Subnet"
+        },
+        "GatewayId": {
+          "Ref": "GatewayForVpc1000016"
+        }
+      },
+      "DependsOn": [
+        "GatewayForVpc1000016",
+        "AttachmentOfGatewayToVpc1000016"
+      ]
+    },
+    "SubnetRouteTableAssociation4Vpc1000016FnSelect0AllZones1008024SubnetRouteTableVpc1000016Vpc1000016FnSelect0AllZones1008024Subnet": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Vpc1000016FnSelect0AllZones1008024Subnet"
+        },
+        "SubnetId": {
+          "Ref": "Vpc1000016FnSelect0AllZones1008024Subnet"
+        }
+      }
+    },
+    "Vpc1000016FnSelect1AllZones10010024Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "CidrBlock": "10.0.10.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Ref": "AllZones"
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Vpc1000016FnSelect1AllZones10010024Subnet"
+          }
+        ]
+      }
+    },
+    "RouteTableVpc1000016Vpc1000016FnSelect1AllZones10010024Subnet": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "RouteTableVpc1000016Vpc1000016FnSelect1AllZones10010024Subnet"
+          }
+        ]
+      },
+      "DependsOn": [
+        "GatewayForVpc1000016"
+      ]
+    },
+    "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Vpc1000016FnSelect1AllZones10010024Subnet": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Vpc1000016FnSelect1AllZones10010024Subnet"
+        },
+        "GatewayId": {
+          "Ref": "GatewayForVpc1000016"
+        }
+      },
+      "DependsOn": [
+        "GatewayForVpc1000016",
+        "AttachmentOfGatewayToVpc1000016"
+      ]
+    },
+    "SubnetRouteTableAssociation4Vpc1000016FnSelect1AllZones10010024SubnetRouteTableVpc1000016Vpc1000016FnSelect1AllZones10010024Subnet": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTableVpc1000016Vpc1000016FnSelect1AllZones10010024Subnet"
+        },
+        "SubnetId": {
+          "Ref": "Vpc1000016FnSelect1AllZones10010024Subnet"
+        }
+      }
+    },
+    "SecurityGroupforELBInVpc1000016": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "FromPort": "80",
+            "ToPort": "80",
+            "IpProtocol": "tcp",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "SecurityGroupEgress": [],
+        "GroupDescription": "Security Group for ELB",
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "SecurityGroupforELBInVpc1000016"
+          }
+        ]
+      }
+    },
+    "SecurityGroupForIisPackageInVpc1000016": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "FromPort": "80",
+            "ToPort": "80",
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {
+              "Ref": "SecurityGroupDefaultforLoadBalancerForInVpc1000016"
+            }
+          },
+          {
+            "FromPort": "443",
+            "ToPort": "443",
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {
+              "Ref": "SecurityGroupDefaultforLoadBalancerForInVpc1000016"
+            }
+          }
+        ],
+        "SecurityGroupEgress": [],
+        "GroupDescription": "SecurityGroupForIisPackage",
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "SecurityGroupForIisPackageInVpc1000016"
+          }
+        ]
+      }
+    },
+    "WaitWaitForIisPackageyadayadaiisOn4LaunchConfigurationForAutoScalingGroup0": {
+      "Type": "AWS::CloudFormation::WaitCondition",
+      "Properties": {
+        "Timeout": 43200,
+        "Handle": {
+          "Ref": "WaitForIisPackageyadayadaiisOn4LaunchConfigurationForAutoScalingGroup0"
+        }
+      },
+      "DependsOn": [
+        "AutoScalingGroup0"
+      ]
+    },
+    "WaitForIisPackageyadayadaiisOn4LaunchConfigurationForAutoScalingGroup0": {
+      "Type": "AWS::CloudFormation::WaitConditionHandle",
+      "Properties": {}
+    },
+    "SecurityGroupDefaultforLoadBalancerForInVpc1000016": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [],
+        "SecurityGroupEgress": [],
+        "GroupDescription": "Default Security Group for LoadBalancerFor",
+        "VpcId": {
+          "Ref": "Vpc1000016"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "SecurityGroupDefaultforLoadBalancerForInVpc1000016"
+          }
+        ]
+      }
+    }
+  },
+  "Mappings": {
+    "RegionMappingInfo": {
+      "us-east-1": {
+        "NumberOfAvailableZones": 4,
+        "w2k12r2BaseAmi": "ami-e0e00f8d",
+        "Windows": "ami-e0e00f8d",
+        "Linux": "ami-f5f41398",
+        "AmazonLinuxNatInstanceAmi": "ami-8d8976e0"
+      },
+      "us-west-1": {
+        "NumberOfAvailableZones": 2,
+        "w2k12r2BaseAmi": "ami-b8c5bcd8",
+        "Windows": "ami-b8c5bcd8",
+        "Linux": "ami-6e84fa0e",
+        "AmazonLinuxNatInstanceAmi": "ami-407f0520"
+      },
+      "us-west-2": {
+        "NumberOfAvailableZones": 3,
+        "w2k12r2BaseAmi": "ami-8db945ed",
+        "Windows": "ami-8db945ed",
+        "Linux": "ami-f303fb93",
+        "AmazonLinuxNatInstanceAmi": "ami-cc01f9ac"
+      }
+    }
+  },
+  "Parameters": {
+    "KeyNameParameterNatInstance0": {
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "default"
+    },
+    "NatInstanceSize": {
+      "Type": "String",
+      "Default": "t2.nano",
+      "Description": "Instance size type",
+      "MinLength": 1,
+      "MaxLength": 4096,
+      "NoEcho": false,
+      "AllowedValues": [
+        "t2.nano",
+        "t2.micro",
+        "t2.small",
+        "t2.medium",
+        "t2.large",
+        "m4.large",
+        "m4.xlarge",
+        "m4.2xlarge",
+        "m4.4xlarge",
+        "m4.10xlarge",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "m3.2xlarge",
+        "c4.large",
+        "c4.xlarge",
+        "db.t2.micro",
+        "c4.8xlarge"
+      ]
+    },
+    "AllZones": {
+      "Type": "List<AWS::EC2::AvailabilityZone::Name>",
+      "Description": "Availability Zones that the stack should utilize.  For high availability, specify at least 2 zones."
+    },
+    "KeyNameParameterNatInstance1": {
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "default"
+    },
+    "DirectoryFqdn0": {
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 4096,
+      "NoEcho": false
+    },
+    "DirectoryDomainAdminPassword0": {
+      "Type": "String",
+      "Description": "Domain Admin Password",
+      "MinLength": 1,
+      "MaxLength": 4096,
+      "NoEcho": true
+    },
+    "DirectoryShortName0": {
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 4096,
+      "NoEcho": false
+    },
+    "InstanceTypeParameterLaunchConfigurationForAutoScalingGroup0": {
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 4096,
+      "NoEcho": false,
+      "AllowedValues": [
+        "t2.nano",
+        "t2.micro",
+        "t2.small",
+        "t2.medium",
+        "t2.large",
+        "m4.large",
+        "m4.xlarge",
+        "m4.2xlarge",
+        "m4.4xlarge",
+        "m4.10xlarge",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "m3.2xlarge",
+        "c4.large",
+        "c4.xlarge",
+        "db.t2.micro",
+        "c4.8xlarge"
+      ],
+      "Default": "t2.nano"
+    },
+    "KeyNameParameterLaunchConfigurationForAutoScalingGroup0": {
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "default"
+    },
+    "MinInstancesParameterAutoScalingGroup0": {
+      "Type": "Number",
+      "Default": "1",
+      "Description": "Minimum number of instances for the group."
+    },
+    "MaxInstancesParameterAutoScalingGroup0": {
+      "Type": "Number",
+      "Default": "1",
+      "Description": "Maximum number of instances for the group."
+    },
+    "KeyNameParameterRdp0": {
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "default"
+    },
+    "AccessCidrParameterRdp0": {
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 4096,
+      "NoEcho": false,
+      "Description": "CIDR Block allowed to access the Remote Desktop Gateway Server (RDGW).",
+      "Default": "0.0.0.0/0"
+    },
+    "TimeToLiveParameterRdp0directoryfqdn0": {
+      "Type": "Number",
+      "Description": "DNS Record Time To Live (TTL)"
+    },
+    "KeyNameParameterRdp1": {
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "default"
+    },
+    "AccessCidrParameterRdp1": {
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 4096,
+      "NoEcho": false,
+      "Description": "CIDR Block allowed to access the Remote Desktop Gateway Server (RDGW).",
+      "Default": "0.0.0.0/0"
+    },
+    "TimeToLiveParameterRdp1directoryfqdn0": {
+      "Type": "Number",
+      "Description": "DNS Record Time To Live (TTL)"
+    },
+    "DomainNameParameter3": {
+      "Type": "String",
+      "Description": "Domain Name of Recordset",
+      "MinLength": 1,
+      "MaxLength": 4096,
+      "NoEcho": false
+    },
+    "TimeToLiveParameter3": {
+      "Type": "Number",
+      "Description": "DNS Record Time To Live (TTL)"
+    },
+    "HostedZoneNameParameter3": {
+      "Type": "String",
+      "Description": "Hosted Zone Name",
+      "MinLength": 1,
+      "MaxLength": 4096,
+      "NoEcho": false
+    }
+  },
+  "Outputs": {
+    "Vpc1000016": {
+      "Value": {
+        "Ref": "Vpc1000016"
+      }
+    },
+    "GatewayForVpc1000016": {
+      "Value": {
+        "Ref": "GatewayForVpc1000016"
+      }
+    },
+    "AttachmentOfGatewayToVpc1000016": {
+      "Value": {
+        "Ref": "AttachmentOfGatewayToVpc1000016"
+      }
+    },
+    "Vpc1000016FnSelect0AllZones1000024Subnet": {
+      "Value": {
+        "Ref": "Vpc1000016FnSelect0AllZones1000024Subnet"
+      }
+    },
+    "RouteTableVpc1000016Vpc1000016FnSelect0AllZones1000024Subnet": {
+      "Value": {
+        "Ref": "RouteTableVpc1000016Vpc1000016FnSelect0AllZones1000024Subnet"
+      }
+    },
+    "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Vpc1000016FnSelect0AllZones1000024Subnet": {
+      "Value": {
+        "Ref": "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Vpc1000016FnSelect0AllZones1000024Subnet"
+      }
+    },
+    "SubnetRouteTableAssociation4Vpc1000016FnSelect0AllZones1000024SubnetRouteTableVpc1000016Vpc1000016FnSelect0AllZones1000024Subnet": {
+      "Value": {
+        "Ref": "SubnetRouteTableAssociation4Vpc1000016FnSelect0AllZones1000024SubnetRouteTableVpc1000016Vpc1000016FnSelect0AllZones1000024Subnet"
+      }
+    },
+    "NatInstance0": {
+      "Value": {
+        "Ref": "NatInstance0"
+      }
+    },
+    "SecurityGroupEnablesSshaccesstoNAT1inAZ1viaport22andoutboundinternetaccessviaprivatesubnetsforNatInstance0InVpc1000016": {
+      "Value": {
+        "Ref": "SecurityGroupEnablesSshaccesstoNAT1inAZ1viaport22andoutboundinternetaccessviaprivatesubnetsforNatInstance0InVpc1000016"
+      }
+    },
+    "Vpc1000016FnSelect1AllZones1001024Subnet": {
+      "Value": {
+        "Ref": "Vpc1000016FnSelect1AllZones1001024Subnet"
+      }
+    },
+    "RouteTableVpc1000016Vpc1000016FnSelect1AllZones1001024Subnet": {
+      "Value": {
+        "Ref": "RouteTableVpc1000016Vpc1000016FnSelect1AllZones1001024Subnet"
+      }
+    },
+    "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Vpc1000016FnSelect1AllZones1001024Subnet": {
+      "Value": {
+        "Ref": "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Vpc1000016FnSelect1AllZones1001024Subnet"
+      }
+    },
+    "SubnetRouteTableAssociation4Vpc1000016FnSelect1AllZones1001024SubnetRouteTableVpc1000016Vpc1000016FnSelect1AllZones1001024Subnet": {
+      "Value": {
+        "Ref": "SubnetRouteTableAssociation4Vpc1000016FnSelect1AllZones1001024SubnetRouteTableVpc1000016Vpc1000016FnSelect1AllZones1001024Subnet"
+      }
+    },
+    "NatInstance1": {
+      "Value": {
+        "Ref": "NatInstance1"
+      }
+    },
+    "SecurityGroupEnablesSshaccesstoNAT1inAZ1viaport22andoutboundinternetaccessviaprivatesubnetsforNatInstance1InVpc1000016": {
+      "Value": {
+        "Ref": "SecurityGroupEnablesSshaccesstoNAT1inAZ1viaport22andoutboundinternetaccessviaprivatesubnetsforNatInstance1InVpc1000016"
+      }
+    },
+    "ActiveDirectory0": {
+      "Value": {
+        "Ref": "ActiveDirectory0"
+      }
+    },
+    "Subnet0ForActiveDirectory0": {
+      "Value": {
+        "Ref": "Subnet0ForActiveDirectory0"
+      }
+    },
+    "Subnet1ForActiveDirectory0": {
+      "Value": {
+        "Ref": "Subnet1ForActiveDirectory0"
+      }
+    },
+    "DhcpVpc1000016DirectoryFqdn0": {
+      "Value": {
+        "Ref": "DhcpVpc1000016DirectoryFqdn0"
+      }
+    },
+    "DhcpOptionsAssociationForDhcpVpc1000016DirectoryFqdn0ToVpc1000016": {
+      "Value": {
+        "Ref": "DhcpOptionsAssociationForDhcpVpc1000016DirectoryFqdn0ToVpc1000016"
+      }
+    },
+    "AutoScalingGroup0": {
+      "Value": {
+        "Ref": "AutoScalingGroup0"
+      }
+    },
+    "LaunchConfigurationForAutoScalingGroup0": {
+      "Value": {
+        "Ref": "LaunchConfigurationForAutoScalingGroup0"
+      }
+    },
+    "Subnet0ForAutoScalingGroup0LaunchConfiguration": {
+      "Value": {
+        "Ref": "Subnet0ForAutoScalingGroup0LaunchConfiguration"
+      }
+    },
+    "RouteTableVpc1000016Subnet0ForAutoScalingGroup0LaunchConfiguration": {
+      "Value": {
+        "Ref": "RouteTableVpc1000016Subnet0ForAutoScalingGroup0LaunchConfiguration"
+      }
+    },
+    "RouteFrom00000ToNatInstance0": {
+      "Value": {
+        "Ref": "RouteFrom00000ToNatInstance0"
+      }
+    },
+    "SubnetRouteTableAssociation4Subnet0ForAutoScalingGroup0LaunchConfigurationRouteTableVpc1000016Subnet0ForAutoScalingGroup0LaunchConfiguration": {
+      "Value": {
+        "Ref": "SubnetRouteTableAssociation4Subnet0ForAutoScalingGroup0LaunchConfigurationRouteTableVpc1000016Subnet0ForAutoScalingGroup0LaunchConfiguration"
+      }
+    },
+    "Subnet1ForAutoScalingGroup0LaunchConfiguration": {
+      "Value": {
+        "Ref": "Subnet1ForAutoScalingGroup0LaunchConfiguration"
+      }
+    },
+    "RouteTableVpc1000016Subnet1ForAutoScalingGroup0LaunchConfiguration": {
+      "Value": {
+        "Ref": "RouteTableVpc1000016Subnet1ForAutoScalingGroup0LaunchConfiguration"
+      }
+    },
+    "RouteFrom00000ToNatInstance1": {
+      "Value": {
+        "Ref": "RouteFrom00000ToNatInstance1"
+      }
+    },
+    "SubnetRouteTableAssociation4Subnet1ForAutoScalingGroup0LaunchConfigurationRouteTableVpc1000016Subnet1ForAutoScalingGroup0LaunchConfiguration": {
+      "Value": {
+        "Ref": "SubnetRouteTableAssociation4Subnet1ForAutoScalingGroup0LaunchConfigurationRouteTableVpc1000016Subnet1ForAutoScalingGroup0LaunchConfiguration"
+      }
+    },
+    "Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Value": {
+        "Ref": "Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+      }
+    },
+    "RouteTableVpc1000016Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Value": {
+        "Ref": "RouteTableVpc1000016Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+      }
+    },
+    "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Value": {
+        "Ref": "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+      }
+    },
+    "SubnetRouteTableAssociation4Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0RouteTableVpc1000016Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Value": {
+        "Ref": "SubnetRouteTableAssociation4Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0RouteTableVpc1000016Subnet0ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+      }
+    },
+    "Rdp0": {
+      "Value": {
+        "Ref": "Rdp0"
+      }
+    },
+    "SecurityGroupForRemoteDesktopGatewayPackageInVpc1000016": {
+      "Value": {
+        "Ref": "SecurityGroupForRemoteDesktopGatewayPackageInVpc1000016"
+      }
+    },
+    "ElasticIpvpcRdp0": {
+      "Value": {
+        "Ref": "ElasticIpvpcRdp0"
+      }
+    },
+    "HostedZoneNameRecordSet0": {
+      "Value": {
+        "Ref": "HostedZoneNameRecordSet0"
+      }
+    },
+    "SecurityGroupRemoteDesktopInVpc1000016": {
+      "Value": {
+        "Ref": "SecurityGroupRemoteDesktopInVpc1000016"
+      }
+    },
+    "SecurityGroupDefaultGroupforLaunchConfigurationForAutoScalingGroup0InVpc1000016": {
+      "Value": {
+        "Ref": "SecurityGroupDefaultGroupforLaunchConfigurationForAutoScalingGroup0InVpc1000016"
+      }
+    },
+    "SecurityGroupAllowsaccessfromtheRDGWInVpc1000016": {
+      "Value": {
+        "Ref": "SecurityGroupAllowsaccessfromtheRDGWInVpc1000016"
+      }
+    },
+    "Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Value": {
+        "Ref": "Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+      }
+    },
+    "RouteTableVpc1000016Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Value": {
+        "Ref": "RouteTableVpc1000016Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+      }
+    },
+    "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Value": {
+        "Ref": "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+      }
+    },
+    "SubnetRouteTableAssociation4Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0RouteTableVpc1000016Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0": {
+      "Value": {
+        "Ref": "SubnetRouteTableAssociation4Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0RouteTableVpc1000016Subnet1ForRemoteDesktopGatewayServerForAutoScalingGroup0"
+      }
+    },
+    "Rdp1": {
+      "Value": {
+        "Ref": "Rdp1"
+      }
+    },
+    "ElasticIpvpcRdp1": {
+      "Value": {
+        "Ref": "ElasticIpvpcRdp1"
+      }
+    },
+    "HostedZoneNameRecordSet1": {
+      "Value": {
+        "Ref": "HostedZoneNameRecordSet1"
+      }
+    },
+    "LoadBalancerFor": {
+      "Value": {
+        "Ref": "LoadBalancerFor"
+      }
+    },
+    "HostedZoneNameRecordSet2": {
+      "Value": {
+        "Ref": "HostedZoneNameRecordSet2"
+      }
+    },
+    "Vpc1000016FnSelect0AllZones1008024Subnet": {
+      "Value": {
+        "Ref": "Vpc1000016FnSelect0AllZones1008024Subnet"
+      }
+    },
+    "RouteTableVpc1000016Vpc1000016FnSelect0AllZones1008024Subnet": {
+      "Value": {
+        "Ref": "RouteTableVpc1000016Vpc1000016FnSelect0AllZones1008024Subnet"
+      }
+    },
+    "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Vpc1000016FnSelect0AllZones1008024Subnet": {
+      "Value": {
+        "Ref": "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Vpc1000016FnSelect0AllZones1008024Subnet"
+      }
+    },
+    "SubnetRouteTableAssociation4Vpc1000016FnSelect0AllZones1008024SubnetRouteTableVpc1000016Vpc1000016FnSelect0AllZones1008024Subnet": {
+      "Value": {
+        "Ref": "SubnetRouteTableAssociation4Vpc1000016FnSelect0AllZones1008024SubnetRouteTableVpc1000016Vpc1000016FnSelect0AllZones1008024Subnet"
+      }
+    },
+    "Vpc1000016FnSelect1AllZones10010024Subnet": {
+      "Value": {
+        "Ref": "Vpc1000016FnSelect1AllZones10010024Subnet"
+      }
+    },
+    "RouteTableVpc1000016Vpc1000016FnSelect1AllZones10010024Subnet": {
+      "Value": {
+        "Ref": "RouteTableVpc1000016Vpc1000016FnSelect1AllZones10010024Subnet"
+      }
+    },
+    "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Vpc1000016FnSelect1AllZones10010024Subnet": {
+      "Value": {
+        "Ref": "RouteTo00000GatewayForVpc1000016InTableRouteTableVpc1000016Vpc1000016FnSelect1AllZones10010024Subnet"
+      }
+    },
+    "SubnetRouteTableAssociation4Vpc1000016FnSelect1AllZones10010024SubnetRouteTableVpc1000016Vpc1000016FnSelect1AllZones10010024Subnet": {
+      "Value": {
+        "Ref": "SubnetRouteTableAssociation4Vpc1000016FnSelect1AllZones10010024SubnetRouteTableVpc1000016Vpc1000016FnSelect1AllZones10010024Subnet"
+      }
+    },
+    "SecurityGroupforELBInVpc1000016": {
+      "Value": {
+        "Ref": "SecurityGroupforELBInVpc1000016"
+      }
+    },
+    "SecurityGroupForIisPackageInVpc1000016": {
+      "Value": {
+        "Ref": "SecurityGroupForIisPackageInVpc1000016"
+      }
+    }
+  },
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Parameters": [
+            "KeyNameParameterNatInstance0",
+            "NatInstanceSize"
+          ],
+          "Label": {
+            "default": "Nat Instance 0"
+          }
+        },
+        {
+          "Parameters": [
+            "AllZones",
+            "AllZones",
+            "AllZones",
+            "AllZones",
+            "AllZones",
+            "AllZones",
+            "AllZones",
+            "AllZones",
+            "AllZones"
+          ],
+          "Label": {
+            "default": "Stack Globals"
+          }
+        },
+        {
+          "Parameters": [
+            "KeyNameParameterNatInstance1",
+            "NatInstanceSize"
+          ],
+          "Label": {
+            "default": "Nat Instance 1"
+          }
+        },
+        {
+          "Parameters": [
+            "DirectoryFqdn0",
+            "DirectoryDomainAdminPassword0",
+            "DirectoryShortName0"
+          ],
+          "Label": {
+            "default": "Active Directory"
+          }
+        },
+        {
+          "Parameters": [
+            "InstanceTypeParameterLaunchConfigurationForAutoScalingGroup0",
+            "KeyNameParameterLaunchConfigurationForAutoScalingGroup0",
+            "MinInstancesParameterAutoScalingGroup0",
+            "MaxInstancesParameterAutoScalingGroup0"
+          ],
+          "Label": {
+            "default": "Auto Scaling Group 0"
+          }
+        },
+        {
+          "Parameters": [
+            "KeyNameParameterRdp0",
+            "AccessCidrParameterRdp0"
+          ],
+          "Label": {
+            "default": "Rdp 0"
+          }
+        },
+        {
+          "Parameters": [
+            "TimeToLiveParameterRdp0directoryfqdn0"
+          ],
+          "Label": {
+            "default": "Route53 RecordSet rdp0DirectoryFqdn0"
+          }
+        },
+        {
+          "Parameters": [
+            "KeyNameParameterRdp1",
+            "AccessCidrParameterRdp1"
+          ],
+          "Label": {
+            "default": "Rdp 1"
+          }
+        },
+        {
+          "Parameters": [
+            "TimeToLiveParameterRdp1directoryfqdn0"
+          ],
+          "Label": {
+            "default": "Route53 RecordSet rdp1DirectoryFqdn0"
+          }
+        },
+        {
+          "Parameters": [
+            "DomainNameParameter3",
+            "TimeToLiveParameter3",
+            "HostedZoneNameParameter3"
+          ],
+          "Label": {
+            "default": "Route53 RecordSet 3"
+          }
+        }
+      ],
+      "ParameterLabels": {
+        "KeyNameParameterNatInstance0": {
+          "default": "Key Name"
+        },
+        "AllZones": {
+          "default": "Availability Zones"
+        },
+        "KeyNameParameterNatInstance1": {
+          "default": "Key Name"
+        },
+        "DirectoryFqdn0": {
+          "default": "Fully Qualified Domain Name  (Domain '0')"
+        },
+        "DirectoryDomainAdminPassword0": {
+          "default": "Admin Password (Domain '0')"
+        },
+        "DirectoryShortName0": {
+          "default": "NetBIOS Name  (Domain '0')"
+        },
+        "InstanceTypeParameterLaunchConfigurationForAutoScalingGroup0": {
+          "default": "Instance Type"
+        },
+        "KeyNameParameterLaunchConfigurationForAutoScalingGroup0": {
+          "default": "Key Name"
+        },
+        "MinInstancesParameterAutoScalingGroup0": {
+          "default": "Min Instances"
+        },
+        "MaxInstancesParameterAutoScalingGroup0": {
+          "default": "Max Instances"
+        },
+        "KeyNameParameterRdp0": {
+          "default": "Key Name"
+        },
+        "AccessCidrParameterRdp0": {
+          "default": "Access Cidr"
+        },
+        "TimeToLiveParameterRdp0directoryfqdn0": {
+          "default": "Time To Live"
+        },
+        "KeyNameParameterRdp1": {
+          "default": "Key Name"
+        },
+        "AccessCidrParameterRdp1": {
+          "default": "Access Cidr"
+        },
+        "TimeToLiveParameterRdp1directoryfqdn0": {
+          "default": "Time To Live"
+        },
+        "DomainNameParameter3": {
+          "default": "Domain Name"
+        },
+        "TimeToLiveParameter3": {
+          "default": "Time To Live"
+        },
+        "HostedZoneNameParameter3": {
+          "default": "Hosted Zone Name"
+        }
+      }
+    }
+  }
+}

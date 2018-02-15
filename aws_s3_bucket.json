@@ -1,0 +1,28 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description":"AWS S3 Bucket",
+ 
+    "Resources":{
+        "S3Bucket":{
+            "Type":"AWS::S3::Bucket",
+            "Properties":{
+                "BucketName":"learn-awscfn-templets",
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "learn-awscfn-parameters"
+					}
+				]
+                
+            }
+            
+        }
+        
+    },
+	"Outputs": {
+		"S3BucketName": {
+			"Value": {"Ref": "S3Bucket"},
+			"Description": "Storage account ID"
+        }
+    }
+}

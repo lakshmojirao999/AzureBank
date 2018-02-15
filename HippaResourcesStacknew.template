@@ -1,0 +1,1683 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation Template that creates the necessary HIPPA complained resources.",
+		
+	"Mappings": {
+		"AWSInfoRegionMap": {
+			"us-east-1": {
+				"QuickStartS3URL": "https://s3.amazonaws.com"
+			}
+		},
+		"RegionServiceSupport": {
+			"us-east-1": {
+				"ConfigRules": "true"
+			},
+			"ap-northeast-1": {
+				"ConfigRules": "false"
+			}
+		}
+	},	
+
+    "Parameters": {
+        "pSSHLocation": {
+            "Description": "Lockdown SSH access to the bastion host (default can be accessed from anywhere)",
+            "Type": "String",
+            "MinLength": "9",
+            "MaxLength": "19",
+            "Default": "0.0.0.0/0",
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "must be a valid CIDR range of the form x.x.x.x/x."
+        },
+        "pWebServerInstanceType": {
+            "Description": "WebServer Server EC2 instance type",
+            "Type": "String",
+            "Default": "t2.micro"
+        },
+        "pWebServerKeyName": {
+            "Description": "The SSH key pair in your account to use for all other WebServer instance logins",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "Default": "awscoe",
+            "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+        },
+		"pWebServerInstanceTenancy": {
+			"Description": "WebServer tenency Dedicated or Default",
+			"Type": "String",
+            "AllowedValues": [
+                "default",
+                "dedicated"
+            ],
+            "Default": "default",			
+			"ConstraintDescription": "must be a either Dedicated or Default."
+		},
+		"pWebEBSVolumeSize" : {
+		  "Description" : "Size in GiB of the WebEBS volume if attached",
+		  "Type" : "Number",
+		  "Default" : "100",
+		  "MinValue" : "1",
+		  "MaxValue" : "1000"
+		},
+		"pWebEBSIOPs" : {
+		  "Description" : "Provisioned IOPs for WebEBS volume if supported by the instance type",
+		  "Type" : "Number",
+		  "Default" : "100",
+		  "MinValue" : "1",
+		  "MaxValue" : "30000"
+		},
+        "pVPNAddress": {
+            "Type": "String",
+            "Description": "IP Address of your VPN device",
+            "MinLength": "7",
+            "MaxLength": "15",
+            "Default": "172.0.1.255",
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})",
+            "ConstraintDescription": "must be a valid IP address of the form x.x.x.x"
+        },
+        "pOnPremiseCIDR": {
+            "Type": "String",
+            "Description": "IP Address range for your existing infrastructure",
+            "MinLength": "9",
+            "MaxLength": "19",
+            "Default": "10.0.0.0/16",
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+        },
+        "pDBName": {
+            "Default": "SampleHIPPADatabase",
+            "Description": "The database name",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "Must be 1 to 64 alphanumeric characters.must begin with a letter and contain only alphanumeric characters."
+        },
+        "pDBUser": {
+            "Default": "admin",
+            "NoEcho": "true",
+            "Description": "The database admin account username",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "16",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "Must be 1 to 16 alphanumeric characters.First character must be a letter.Cannot be a reserved word for the chosen database engine."
+        },
+        "pDBPassword": {
+            "NoEcho": "true",
+            "Description": "Mixed alphanumeric and must be between 8 and 28 characters and contain at least one capital letter",
+            "Type": "String",
+            "MinLength": "8",
+            "MaxLength": "28",
+            "Default": "admin123",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "Can only contain alphanumeric characters or the following special characters !^*-_+, between 8 and 28 characters."
+        },
+        "pAppServerKeyName": {
+            "Description": "The SSH key pair in your account to use for all other Application instance logins",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "Default": "awscoe",
+            "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+        },
+        "pAppInstanceType": {
+            "Description": "Application Server EC2 instance type",
+            "Type": "String",
+            "Default": "t2.micro"
+        },
+		"pAppServerInstanceTenancy": {
+			"Description": "AppServer tenency Dedicated or Default",
+			"Type": "String",
+            "AllowedValues": [
+                "default",
+                "dedicated"
+            ],
+            "Default": "default",			
+			"ConstraintDescription": "must be a either Dedicated or Default."
+		},
+		"pAppEBSVolumeSize" : {
+		  "Description" : "Size in GiB of the App EBS volume if attached",
+		  "Type" : "Number",
+		  "Default" : "100",
+		  "MinValue" : "1",
+		  "MaxValue" : "1000"
+		},
+		"pAppEBSIOPs" : {
+		  "Description" : "Provisioned IOPs for EBS volume if supported by the instance type",
+		  "Type" : "Number",
+		  "Default" : "100",
+		  "MinValue" : "1",
+		  "MaxValue" : "30000"
+		},
+        "pBastionKeyName": {
+            "Description": "The SSH key pair in your account to use for the bastion host login",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "Default": "awscoe",
+            "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+        },
+		"pBastionInstanceType": {
+			"Description": "WebServer Server EC2 instance type",
+			"Type": "String",
+			"Default": "t2.micro"
+		},		
+        "pVPCCIDR": {
+            "Type": "String",
+            "Default": "172.0.0.0/16",
+            "Description": "The VPC CidrBlock"
+        },
+        "pPublicSubnetCIDRAZ1": {
+            "Type": "String",
+            "Default": "172.0.0.0/24",
+            "Description": "The Public SUBnet CidrBlock for NAT in AZ1"
+        },
+        "pwebPrivateSubnetCIDRAZ1": {
+            "Type": "String",
+            "Default": "172.0.1.0/24",
+            "Description": "The Private SUBnet CidrBlock for Web in AZ1"
+        },
+        "pPrivateSubnetCIDRforAPPAZ1": {
+            "Type": "String",
+            "Default": "172.0.2.0/24",
+            "Description": "The Private SubNet CidrBlock for APP in AZ1"
+        },
+        "pPrivateSubNetCIDRforDBAZ1": {
+            "Type": "String",
+            "Default": "172.0.3.0/24",
+            "Description": "The Private SubNet CidrBlock for DB in AZ1"
+        },
+        "pPublicSubnetCIDRAZ2": {
+            "Type": "String",
+            "Default": "172.0.4.0/24",
+            "Description": "The Public SUBnet CidrBlock for NAT in AZ2"
+        },
+        "pwebPrivateSubnetCIDRAZ2": {
+            "Type": "String",
+            "Default": "172.0.5.0/24",
+            "Description": "The Private SUBnet CidrBlock for Web in AZ2"
+        },
+        "pPrivateSubnetCIDRforAPPAZ2": {
+            "Type": "String",
+            "Default": "172.0.6.0/24",
+            "Description": "The Private SubNet CidrBlock for APP in AZ2"
+        },
+		"pPrivateRouteDtnCIDR": {
+			"Type": "String",
+			"Default": "192.0.0.0/16"
+		},		
+        "pPrivateSubNetCIDRforDBAZ2": {
+            "Type": "String",
+            "Default": "172.0.7.0/24",
+            "Description": "The Private SubNet CidrBlock for DB in AZ2"
+        },
+		"pSSLCertificateArn": {
+			"Type": "String",
+			"Default": "arn:aws:iam::932833910912:server-certificate/TEST-CERT",
+			"Description": "The default SSL Certificate should be available in AWS account."		
+		},		
+		"HippaKMSUser": {
+			"Type": "String",
+			"Default": "arn:aws:iam::932833910912:user/Prasad.KGV@cognizant.com",
+			"Description": "The default User ARN available in AWS account for KMS encryption."		
+		},		
+		"pOperatorEmail" : {
+		  "Default" : "nobody@somewhere.com",
+		  "Description" : "EMail address to notify if there are any operational issues",
+		  "Type" : "String"
+		},		
+        "pSupportsConfig": {
+            "Type": "String",
+            "AllowedValues": [
+                "Yes",
+                "No"
+            ],
+            "Default": "No",
+            "Description": "Is AWS Config Rules already configured for this region? Use ''No'' if you are uncertain. AWS Config Rules is available in these regions: US East(Virginia), US West (Oregon), EU West (Ireland), and EU Central (Frankfurt).See AWS Config Management Console or Deployment Guide for details."
+        },
+        "QSS3BucketName": {
+            "Type": "String",
+            "AllowedPattern": "^[0-9a-zA-Z]+([0-9a-zA-Z-.]*[0-9a-zA-Z])*$",
+            "Default": "cfntemplates-coe",
+            "Description": "S3 bucket name for the Quick Start assets. Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-).It cannot start or end with a hyphen (-).",
+            "ConstraintDescription": "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, periods (.), and hyphens (-). It cannot start or end with a hyphen (-)."
+        },
+        "QSS3KeyPrefix": {
+            "Type": "String",
+            "AllowedPattern": "^[0-9a-zA-Z-]+(/[0-9a-zA-Z-]+)*$",
+            "Default": "hippa",
+            "Description": "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/). It cannot start or end with forward slash (/) because they are automatically appended.",
+            "ConstraintDescription": "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/). It cannot start or end with forward slash (/) because they are automatically appended."
+        }
+    },
+		
+    "Resources": {
+        "rVPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "pVPCCIDR"
+                },
+                "EnableDnsSupport": "true",
+                "EnableDnsHostnames": "true",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-VPC"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Public"
+                    }
+                ]
+            }
+        },
+        "InternetGateway": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-InternetGateway"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Public"
+                    }
+                ]
+            }
+        },
+        "rMyRoute": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "rPublicRouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+        "GatewayToInternet": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "rVPC"
+                },
+                "InternetGatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+        "rPrivateSubnetDBAZ1": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "rVPC"
+                },
+                "CidrBlock": {
+                    "Ref": "pPrivateSubNetCIDRforDBAZ1"
+                },
+                "AvailabilityZone": "us-east-1a",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-PrivateDBSubnet"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Private"
+                    }
+                ]
+            }
+        },
+        "rPrivateSubnetDBAZ2": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "rVPC"
+                },
+                "CidrBlock": {
+                    "Ref": "pPrivateSubNetCIDRforDBAZ2"
+                },
+                "AvailabilityZone": "us-east-1e",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-PrivateDBSubnet"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Private"
+                    }
+                ]
+            }
+        },
+        "rPublicSubnetAZ1": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "rVPC"
+                },
+                "AvailabilityZone": "us-east-1a",
+                "CidrBlock": {
+                    "Ref": "pPublicSubnetCIDRAZ1"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-PublicSubnet"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Public"
+                    }
+                ]
+            }
+        },
+        "rPublicSubnetAZ2": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "rVPC"
+                },
+                "AvailabilityZone": "us-east-1e",
+                "CidrBlock": {
+                    "Ref": "pPublicSubnetCIDRAZ2"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-PublicSubnet"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Public"
+                    }
+                ]
+            }
+        },
+        "rPublicRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "rVPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-PublicRouteTable"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Public"
+                    }
+                ]
+            }
+        },
+        "rPublicSubnetRouteTableAssociationAZ1": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "rPublicRouteTable"
+                },
+                "SubnetId": {
+                    "Ref": "rPublicSubnetAZ1"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "rPublicSubnetRouteTableAssociationAZ2": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "rPublicRouteTable"
+                },
+                "SubnetId": {
+                    "Ref": "rPublicSubnetAZ2"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "rPublicNetworkAcl": {
+            "Type": "AWS::EC2::NetworkAcl",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "rVPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-PublicNetworkAcl"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Public"
+                    }
+                ]
+            }
+        },
+        "rInboundHTTPPublicNetworkAclEntry": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "Properties": {
+                "NetworkAclId": {
+                    "Ref": "rPublicNetworkAcl"
+                },
+                "RuleNumber": "100",
+                "Protocol": "6",
+                "RuleAction": "allow",
+                "Egress": "false",
+                "CidrBlock": "0.0.0.0/0",
+                "PortRange": {
+                    "From": "80",
+                    "To": "80"
+                }
+            }
+        },
+        "rInboundDynamicPortPublicNetworkAclEntry": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "Properties": {
+                "NetworkAclId": {
+                    "Ref": "rPublicNetworkAcl"
+                },
+                "RuleNumber": "101",
+                "Protocol": "6",
+                "RuleAction": "allow",
+                "Egress": "false",
+                "CidrBlock": "0.0.0.0/0",
+                "PortRange": {
+                    "From": "0",
+                    "To": "65535"
+                }
+            }
+        },
+        "rInboundSSHPublicNetworkAclEntry": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "Properties": {
+                "NetworkAclId": {
+                    "Ref": "rPublicNetworkAcl"
+                },
+                "RuleNumber": "102",
+                "Protocol": "6",
+                "RuleAction": "allow",
+                "Egress": "false",
+                "CidrBlock": "0.0.0.0/0",
+                "PortRange": {
+                    "From": "22",
+                    "To": "22"
+                }
+            }
+        },
+        "rOutboundPublicNetworkAclEntry": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "Properties": {
+                "NetworkAclId": {
+                    "Ref": "rPublicNetworkAcl"
+                },
+                "RuleNumber": "100",
+                "Protocol": "6",
+                "RuleAction": "allow",
+                "Egress": "true",
+                "CidrBlock": "0.0.0.0/0",
+                "PortRange": {
+                    "From": "0",
+                    "To": "65535"
+                }
+            }
+        },
+        "rPublicSubnetNetworkAclAssociationAZ1": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "rPublicSubnetAZ1"
+                },
+                "NetworkAclId": {
+                    "Ref": "rPublicNetworkAcl"
+                }
+            }
+        },
+        "rPublicSubnetNetworkAclAssociationAZ2": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "rPublicSubnetAZ2"
+                },
+                "NetworkAclId": {
+                    "Ref": "rPublicNetworkAcl"
+                }
+            }
+        },
+        "rPrivateSubnetAZ1": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "rVPC"
+                },
+                "AvailabilityZone": "us-east-1a",
+                "CidrBlock": {
+                    "Ref": "pPrivateSubnetCIDRforAPPAZ1"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-PrivateSubnet"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Private"
+                    }
+                ]
+            }
+        },
+        "rPrivateSubnetAZ2": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "rVPC"
+                },
+                "AvailabilityZone": "us-east-1e",
+                "CidrBlock": {
+                    "Ref": "pPrivateSubnetCIDRforAPPAZ2"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-PrivateSubnet"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Private"
+                    }
+                ]
+            }
+        },
+        "rwebPrivateSubnetAZ1": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "rVPC"
+                },
+                "AvailabilityZone": "us-east-1a",
+                "CidrBlock": {
+                    "Ref": "pwebPrivateSubnetCIDRAZ1"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-WebPrivateSubnet"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Private"
+                    }
+                ]
+            }
+        },
+        "rwebPrivateSubnetAZ2": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "rVPC"
+                },
+                "AvailabilityZone": "us-east-1e",
+                "CidrBlock": {
+                    "Ref": "pwebPrivateSubnetCIDRAZ2"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-WebPrivateSubnet"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Private"
+                    }
+                ]
+            }
+        },
+        "rVPNGateway": {
+            "Type": "AWS::EC2::VPNGateway",
+            "Properties": {
+                "Type": "ipsec.1",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-VPNGateway"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
+                        }
+                    }
+                ]
+            }
+        },
+        "rVPNGatewayAttachment": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "rVPC"
+                },
+                "VpnGatewayId": {
+                    "Ref": "rVPNGateway"
+                }
+            }
+        },
+        "rCustomerGateway": {
+            "Type": "AWS::EC2::CustomerGateway",
+            "Properties": {
+                "Type": "ipsec.1",
+                "BgpAsn": "65000",
+                "IpAddress": {
+                    "Ref": "pVPNAddress"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-CustomerGateway"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
+                        }
+                    },
+                    {
+                        "Key": "VPN",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "Gateway to ",
+                                    {
+                                        "Ref": "pVPNAddress"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "rVPNConnection": {
+            "Type": "AWS::EC2::VPNConnection",
+            "Properties": {
+                "Type": "ipsec.1",
+                "StaticRoutesOnly": "true",
+                "CustomerGatewayId": {
+                    "Ref": "rCustomerGateway"
+                },
+                "VpnGatewayId": {
+                    "Ref": "rVPNGateway"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-VPNConnection"
+                    }
+                ]
+            }
+        },
+        "rVPNConnectionRoute": {
+            "Type": "AWS::EC2::VPNConnectionRoute",
+            "Properties": {
+                "VpnConnectionId": {
+                    "Ref": "rVPNConnection"
+                },
+                "DestinationCidrBlock": {
+                    "Ref": "pOnPremiseCIDR"
+                }
+            }
+        },
+        "rPrivateRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "rVPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-PrivateRouteTable"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "VPN Connected Subnet"
+                    }
+                ]
+            }
+        },
+        "rPrivateSubnetRouteTableAssociationAZ1": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "rPrivateSubnetAZ1"
+                },
+                "RouteTableId": {
+                    "Ref": "rPrivateRouteTable"
+                }
+            }
+        },
+        "rPrivateSubnetRouteTableAssociationAZ2": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "rPrivateSubnetAZ2"
+                },
+                "RouteTableId": {
+                    "Ref": "rPrivateRouteTable"
+                }
+            }
+        },
+        "rwebPrivateSubnetRouteTableAssociationAZ1": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "rwebPrivateSubnetAZ1"
+                },
+                "RouteTableId": {
+                    "Ref": "rPrivateRouteTable"
+                }
+            }
+        },
+        "rwebPrivateSubnetRouteTableAssociationAZ2": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "rwebPrivateSubnetAZ2"
+                },
+                "RouteTableId": {
+                    "Ref": "rPrivateRouteTable"
+                }
+            }
+        },
+        "rdbPrivateSubnetRouteTableAssociationAZ1": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "rPrivateSubnetDBAZ1"
+                },
+                "RouteTableId": {
+                    "Ref": "rPrivateRouteTable"
+                }
+            }
+        },
+        "rdbPrivateSubnetRouteTableAssociationAZ2": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "rPrivateSubnetDBAZ2"
+                },
+                "RouteTableId": {
+                    "Ref": "rPrivateRouteTable"
+                }
+            }
+        },
+        "rPrivateRouteAZ1": {
+            "Type": "AWS::EC2::Route",
+            "DependsOn": "rVPNGatewayAttachment",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "rPrivateRouteTable"
+                },
+                "DestinationCidrBlock": {
+                    "Ref": "pPrivateRouteDtnCIDR"
+                },
+                "NatGatewayId": {
+                    "Ref": "rAPPNATGatewayAZ1"
+                }
+            }
+        },
+        "rPrivateNetworkAcl": {
+            "Type": "AWS::EC2::NetworkAcl",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "rVPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HIPPA-PrivateNetworkAcl"
+                    },
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Private"
+                    }
+                ]
+            }
+        },
+        "rInboundPrivateNetworkAclEntry": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "Properties": {
+                "NetworkAclId": {
+                    "Ref": "rPrivateNetworkAcl"
+                },
+                "RuleNumber": "100",
+                "Protocol": "6",
+                "RuleAction": "allow",
+                "Egress": "false",
+                "CidrBlock": "0.0.0.0/0",
+                "PortRange": {
+                    "From": "0",
+                    "To": "65535"
+                }
+            }
+        },
+        "rOutBoundPrivateNetworkAclEntry": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "Properties": {
+                "NetworkAclId": {
+                    "Ref": "rPrivateNetworkAcl"
+                },
+                "RuleNumber": "100",
+                "Protocol": "6",
+                "RuleAction": "allow",
+                "Egress": "true",
+                "CidrBlock": "0.0.0.0/0",
+                "PortRange": {
+                    "From": "0",
+                    "To": "65535"
+                }
+            }
+        },
+        "rPrivateSubnetNetworkAclAssociationAZ1": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "rPrivateSubnetAZ1"
+                },
+                "NetworkAclId": {
+                    "Ref": "rPrivateNetworkAcl"
+                }
+            }
+        },
+        "rPrivateSubnetNetworkAclAssociationAZ2": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "rPrivateSubnetAZ2"
+                },
+                "NetworkAclId": {
+                    "Ref": "rPrivateNetworkAcl"
+                }
+            }
+        },
+        "rwebPrivateSubnetNetworkAclAssociationAZ1": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "rwebPrivateSubnetAZ1"
+                },
+                "NetworkAclId": {
+                    "Ref": "rPrivateNetworkAcl"
+                }
+            }
+        },
+        "rwebPrivateSubnetNetworkAclAssociationAZ2": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "rwebPrivateSubnetAZ2"
+                },
+                "NetworkAclId": {
+                    "Ref": "rPrivateNetworkAcl"
+                }
+            }
+        },
+        "rdbPrivateSubnetNetworkAclAssociationAZ1": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "rPrivateSubnetDBAZ1"
+                },
+                "NetworkAclId": {
+                    "Ref": "rPrivateNetworkAcl"
+                }
+            }
+        },
+        "rdbPrivateSubnetNetworkAclAssociationAZ2": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "rPrivateSubnetDBAZ2"
+                },
+                "NetworkAclId": {
+                    "Ref": "rPrivateNetworkAcl"
+                }
+            }
+        },
+        "rEIPAZ1": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": "vpc"
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "fb03a7a3-eae5-4f35-8ea1-a1c8ef661186"
+                }
+            }
+        },
+        "rEIPAZ2": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": "vpc"
+            }
+        },
+        "rAPPNATGatewayAZ1": {
+            "Type": "AWS::EC2::NatGateway",
+            "Properties": {
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "rEIPAZ1",
+                        "AllocationId"
+                    ]
+                },
+                "SubnetId": {
+                    "Ref": "rPublicSubnetAZ1"
+                }
+            }
+        },
+        "rAPPNATGatewayAZ2": {
+            "Type": "AWS::EC2::NatGateway",
+            "Properties": {
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "rEIPAZ2",
+                        "AllocationId"
+                    ]
+                },
+                "SubnetId": {
+                    "Ref": "rPublicSubnetAZ2"
+                }
+            }
+        },
+        "rNATRouteAZ1": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "rPrivateRouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "NatGatewayId": {
+                    "Ref": "rAPPNATGatewayAZ1"
+                }
+            }
+        },
+        "HIPPAWEBIAMRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "S3Profile",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "s3:Get*",
+                                        "s3:List*"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    },
+					{
+                        "PolicyName": "CloudwatchLogsAdmin",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Action": [
+										"logs:CreateLogGroup",
+										"logs:CreateLogStream",
+										"logs:PutLogEvents",
+										"logs:DescribeLogStreams"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": [
+										"arn:aws:logs:*:*:*"
+									]
+                                }
+                            ]
+                        }					
+					}
+                ]
+            }
+        },
+        "HIPPAAPPIAMRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "root",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "*",
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "PolicyName": "S3Profile",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "s3:Get*",
+                                        "s3:List*"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    },
+					{
+                        "PolicyName": "CloudwatchLogsAdmin",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Action": [
+										"logs:CreateLogGroup",
+										"logs:CreateLogStream",
+										"logs:PutLogEvents",
+										"logs:DescribeLogStreams"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": [
+										"arn:aws:logs:*:*:*"
+									]
+                                }
+                            ]
+                        }					
+					}
+                ]
+            }
+        },
+        "HippaWebInstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "HIPPAWEBIAMRole"
+                    }
+                ]
+            }
+        },
+        "HippaAppInstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "HIPPAAPPIAMRole"
+                    }
+                ]
+            }
+        },		
+		"rHippaEncryptionKey" : {
+		  "Type" : "AWS::KMS::Key",
+		  "Properties" : {
+			"Description" : "A Hippa Encryption key",
+			"KeyPolicy" : {
+			  "Version": "2012-10-17",
+			  "Id": "key-default-1",
+			  "Statement": [
+				{
+				  "Sid": "Allow administration of the key",
+				  "Effect": "Allow",
+				  "Principal": { "AWS": { "Ref" :"HippaKMSUser" } },
+				  "Action": [
+					"kms:Create*",
+					"kms:Describe*",
+					"kms:Enable*",
+					"kms:List*",
+					"kms:Put*",
+					"kms:Update*",
+					"kms:Revoke*",
+					"kms:Disable*",
+					"kms:Get*",
+					"kms:Delete*",
+					"kms:ScheduleKeyDeletion",
+					"kms:CancelKeyDeletion"
+				  ],
+				  "Resource": "*"
+				}				    
+			  ]
+			}
+		  }
+		},
+		
+		"PublicLayerStack": {
+			"Type": "AWS::CloudFormation::Stack",
+			"DependsOn": "WebLayerStack",
+			"Properties": {
+				"TemplateURL": {
+					"Fn::Join": ["", [{
+						"Fn::FindInMap": ["AWSInfoRegionMap", {
+							"Ref": "AWS::Region"
+						}, "QuickStartS3URL"]
+					}, "/", {
+						"Ref": "QSS3BucketName" 
+					}, "/", {
+						"Ref": "QSS3KeyPrefix" 
+					}, "/", "hippa-aws-natnew.template"]]
+				},
+				"Parameters": {
+					"pSSHLocation" : {
+						"Ref": "pSSHLocation"
+					},
+					"pBastionInstanceType" : {
+						"Ref": "pBastionInstanceType"
+					},					
+					"pBastionKeyName" : {
+						"Ref": "pBastionKeyName"
+					},
+					"pInstanceProfile" : {
+						"Fn::GetAtt": ["HippaWebInstanceProfile","Arn"]
+					},					
+					"pVPCID": {
+						"Ref": "rVPC"
+					},
+					"pPublicSubnetIDAZ1" :{
+						"Ref": "rPublicSubnetAZ1"
+					},
+					"pPublicSubnetIDAZ2" :{
+						"Ref": "rPublicSubnetAZ2"
+					},
+					"pSSLCertificateArn":{
+						"Ref": "pSSLCertificateArn"
+					},
+					"pWebServerInstanceType" : {
+						"Ref": "pWebServerInstanceType"
+					},
+					"pWebServerInstanceTenancy" :{
+						"Ref": "pWebServerInstanceTenancy"
+					},
+					"pWebServerKeyName" : {"Ref": "pWebServerKeyName"},
+					"pwebPrivateSubnetIDAZ1" :{
+						"Ref": "rwebPrivateSubnetAZ1"
+					},
+					"pInternalLoadBalancerUrl": {
+						"Fn::GetAtt": ["APPLayerStack", "Outputs.WebsiteURL"]
+					},						
+					"pwebPrivateSubnetAZ1":{
+						"Fn::GetAtt": ["rwebPrivateSubnetAZ1","AvailabilityZone"]
+					},
+					"pwebPrivateSubnetIDAZ2" :{
+						"Ref": "rwebPrivateSubnetAZ2"
+					},
+					"pKMSKeyID" :{
+						"Ref": "rHippaEncryptionKey"
+					},
+					"pWebEBSVolumeSize" :{
+						"Ref": "pWebEBSVolumeSize"
+					},
+					"pWebEBSIOPs" :{
+						"Ref": "pWebEBSIOPs"
+					},					
+					"pwebPrivateSubnetAZ2":{
+						"Fn::GetAtt": ["rwebPrivateSubnetAZ2","AvailabilityZone"]
+					}			
+				}
+			}
+		},
+		"WebLayerStack": {
+			"Type": "AWS::CloudFormation::Stack",
+			"DependsOn":"APPLayerStack",
+			"Properties": {
+				"TemplateURL": {
+					"Fn::Join": ["", [{
+						"Fn::FindInMap": ["AWSInfoRegionMap", {
+							"Ref": "AWS::Region"
+						}, "QuickStartS3URL"]
+					}, "/", {
+						"Ref": "QSS3BucketName" 
+					}, "/", {
+						"Ref": "QSS3KeyPrefix" 
+					}, "/", "hippa-aws-web.template"]]
+				},
+				"Parameters": {
+					"pSSHLocation" : {
+						"Ref": "pSSHLocation"
+					},
+					"pWebServerInstanceType" : {
+						"Ref": "pWebServerInstanceType"
+					},					
+					"pWebServerKeyName" : {"Ref": "pWebServerKeyName"},
+					"pInstanceProfile" : {
+						"Fn::GetAtt": ["HippaWebInstanceProfile","Arn"]
+					},					
+					"pVPCID": {
+						"Ref": "rVPC"
+					},
+					"pwebPrivateSubnetIDAZ1" :{
+						"Ref": "rwebPrivateSubnetAZ1"
+					},
+					"pwebPrivateSubnetAZ1":{
+						"Fn::GetAtt": ["rwebPrivateSubnetAZ1","AvailabilityZone"]
+					},
+					"pwebPrivateSubnetIDAZ2" :{
+						"Ref": "rwebPrivateSubnetAZ2"
+					},
+					"pwebPrivateSubnetAZ2":{
+						"Fn::GetAtt": ["rwebPrivateSubnetAZ2","AvailabilityZone"]
+					},			
+					"pSSLCertificateArn":{
+						"Ref": "pSSLCertificateArn"
+					}			
+				}
+			}
+		},		
+		"APPLayerStack": {
+			"Type": "AWS::CloudFormation::Stack",
+			"DependsOn":"DBLayerStack",
+			"Properties": {
+				"TemplateURL": {
+					"Fn::Join": ["", [{
+						"Fn::FindInMap": ["AWSInfoRegionMap", {
+							"Ref": "AWS::Region"
+						}, "QuickStartS3URL"]
+					}, "/", {
+						"Ref": "QSS3BucketName" 
+					}, "/", {
+						"Ref": "QSS3KeyPrefix" 
+					}, "/", "hippa-aws-appnew.template"]]
+				},
+				"Parameters": {
+					"pAppServerKeyName": {
+						"Ref": "pAppServerKeyName"
+					},
+					"pAppInstanceType": {
+						"Ref": "pAppInstanceType"
+					},
+					"pInstanceProfile": {
+						"Fn::GetAtt": ["HippaAppInstanceProfile","Arn"]					
+					},
+					"pAppServerInstanceTenancy": {
+						"Ref": "pAppServerInstanceTenancy"
+					},					
+					"pVPCID": {
+						"Ref": "rVPC"	
+					},
+					"pPrivateSubnetIDAZ1": {
+						"Ref": "rPrivateSubnetAZ1"
+					},
+					"pPrivateSubnetIDAZ2": {
+						"Ref": "rPrivateSubnetAZ2"
+					},					
+					"pPrivateSubnetAZ1": {						 
+						"Fn::GetAtt": ["rPrivateSubnetAZ1","AvailabilityZone"]
+					},
+					"pPrivateSubnetAZ2": {						 
+						"Fn::GetAtt": ["rPrivateSubnetAZ2","AvailabilityZone"]
+					},
+					"pSSLCertificateArn": {
+						"Ref": "pSSLCertificateArn"	
+					},
+					"pKMSKeyID" :{
+						"Ref": "rHippaEncryptionKey"
+					},
+					"pAppEBSVolumeSize" :{
+						"Ref": "pAppEBSVolumeSize"
+					},
+					"pAppEBSIOPs" :{
+						"Ref": "pAppEBSIOPs"
+					},					
+					"pOperatorEmail" : {
+						"Ref": "pOperatorEmail"	
+					}					
+				}
+			}
+		},
+		
+		"DBLayerStack": {
+			"Type": "AWS::CloudFormation::Stack",
+			"Properties": {
+				"TemplateURL": {
+					"Fn::Join": ["", [{
+						"Fn::FindInMap": ["AWSInfoRegionMap", {
+							"Ref": "AWS::Region"
+						}, "QuickStartS3URL"]
+					}, "/", {
+						"Ref": "QSS3BucketName" 
+					}, "/", {
+						"Ref": "QSS3KeyPrefix" 
+					}, "/", "hippa-aws-db.template"]]
+				},
+				"Parameters": {
+					"pDBName": {
+						"Ref": "pDBName"
+					},
+					"pDBUser": {
+						"Ref": "pDBUser"
+					},
+					"pDBPassword": {
+						"Ref": "pDBPassword"
+					},		
+					"pVPCID": {
+						"Ref": "rVPC"						
+					},		
+					"pPrimaryPrivateSubnet": {
+						"Ref": "rPrivateSubnetDBAZ1"
+					},
+					"pSecondaryPrivateSubnet": {
+						"Ref": "rPrivateSubnetDBAZ2"		
+					}					
+				}
+			}
+		}
+		
+    },
+    "Outputs": {
+        "VPCId": {
+            "Description": "VPC ID",
+            "Value": {
+                "Ref": "rVPC"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-VPCID"
+                }
+            }
+        },
+        "rPublicSubnetAZ1": {
+            "Description": "The subnet ID to use for public web servers in AZ1",
+            "Value": {
+                "Ref": "rPublicSubnetAZ1"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-PublicSubnetAZ1"
+                }
+            }
+        },
+        "rPublicSubnetAZ2": {
+            "Description": "The subnet ID to use for public web servers in AZ2",
+            "Value": {
+                "Ref": "rPublicSubnetAZ2"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-PublicSubnetAZ2"
+                }
+            }
+        },
+        "rPrivateSubnetAZ1": {
+            "Description": "The Application PrivateSubnet's AZ1",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-PrivateSubnetAZ1"
+                }
+            },
+            "Value": {
+                "Fn::GetAtt": [
+                    "rPrivateSubnetAZ1",
+                    "AvailabilityZone"
+                ]
+            }
+        },
+        "rPrivateSubnetAZ2": {
+            "Description": "The Application PrivateSubnet's AZ2",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-PrivateSubnetAZ2"
+                }
+            },
+            "Value": {
+                "Fn::GetAtt": [
+                    "rPrivateSubnetAZ2",
+                    "AvailabilityZone"
+                ]
+            }
+        },
+        "rAPPNATGatewayAZ1": {
+            "Description": "The Application NAT Gateway in AZ1",
+            "Value": {
+                "Ref": "rAPPNATGatewayAZ1"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-rAPPNATGatewayAZ1"
+                }
+            }
+        },
+        "rAPPNATGatewayAZ2": {
+            "Description": "The Application NAT Gateway in AZ2",
+            "Value": {
+                "Ref": "rAPPNATGatewayAZ2"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-rAPPNATGatewayAZ2"
+                }
+            }
+        },
+        "rPrivateSubnetIDAZ1": {
+            "Description": "The Application PrivateSubnet",
+            "Value": {
+                "Ref": "rPrivateSubnetAZ1"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-SubnetIDAZ1"
+                }
+            }
+        },
+        "rPrivateSubnetIDAZ2": {
+            "Description": "The Application PrivateSubnet",
+            "Value": {
+                "Ref": "rPrivateSubnetAZ2"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-SubnetIDAZ2"
+                }
+            }
+        },
+        "rwebPrivateSubnetIDAZ1": {
+            "Description": "The Web PrivateSubnet for AZ1",
+            "Value": {
+                "Ref": "rwebPrivateSubnetAZ1"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-webSubnetIDAZ1"
+                }
+            }
+        },
+        "rwebPrivateSubnetAZ1": {
+            "Description": "The Web PrivateSubnet's AZ1",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-webPrivateSubnetAZ"
+                }
+            },
+            "Value": {
+                "Fn::GetAtt": [
+                    "rwebPrivateSubnetAZ1",
+                    "AvailabilityZone"
+                ]
+            }
+        },
+        "rwebPrivateSubnetIDAZ2": {
+            "Description": "The Web PrivateSubnet in AZ2",
+            "Value": {
+                "Ref": "rwebPrivateSubnetAZ2"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-webSubnetIDAZ2"
+                }
+            }
+        },
+        "rwebPrivateSubnetAZ2": {
+            "Description": "The Web PrivateSubnet's in AZ2",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-webPrivateSubnetAZ2"
+                }
+            },
+            "Value": {
+                "Fn::GetAtt": [
+                    "rwebPrivateSubnetAZ2",
+                    "AvailabilityZone"
+                ]
+            }
+        },
+		"rPrivateSubnetDBAZ2": {
+			"Description": "The DB Secondary PrivateSubnet ID in AZ2",
+			"Value": {
+				"Ref": "rPrivateSubnetDBAZ2"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-dbSecondarySubnetID"
+				}
+			}
+		},			
+		"rPrimaryPrivateSubnetAZ": {
+            "Description": "The DB Primary PrivateSubnet's AZ", 
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-dbPrimaryPrivateSubnetAZ"
+                }
+            }, 
+            "Value": {
+                "Fn::GetAtt": ["rPrivateSubnetDBAZ1", "AvailabilityZone"]
+            }
+        },
+		"rPrivateSubnetDBAZ1": {
+			"Description": "The DB Primary PrivateSubnet ID in AZ1",
+			"Value": {
+				"Ref": "rPrivateSubnetDBAZ1"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-dbPrimarySubnetID"
+				}
+			}
+		}
+    }
+}
